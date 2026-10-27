@@ -45,6 +45,8 @@ permission:
     "docker compose logs*": allow
     "git status*": allow
     "git diff*": allow
+    "git checkout*": allow
+    "git switch*": allow
     "ls*": allow
     "find*": allow
     "cat*": allow
