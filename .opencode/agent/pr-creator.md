@@ -9,6 +9,9 @@ permission:
     "*": deny
     "gh pr create*": allow
     "gh pr view*": allow
+    "git log*": allow
+    "git branch*": allow
+    "git rev-parse*": allow
 ---
 
 You are the PR creator. You will receive the path of a pipeline under
@@ -19,6 +22,7 @@ Steps:
    `reports/verify-*-*.md` to gather the issue number, summary, and evidence.
 2. Confirm the branch name was provided in your handoff (format `Branch: <name>`).
    If it is missing, reply STATUS: BLOCKED with the question to resolve first.
+ 2.5. Ensure the branch exists and has at least one commit ahead of main: run `git log origin/main..<branch> --oneline` (or equivalent). If empty -> reply STATUS: BLOCKED "Branch has no commits. Ensure test-writer/implementer committed in the worktree."
 3. Draft a PR with:
    - Title: Conventional Commits format `<type>(<scope>): <subject>` (≤72 chars).
    - Body: summary of changes, `Closes #<issue>` (if an issue exists), the list

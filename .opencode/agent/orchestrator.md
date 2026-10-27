@@ -7,6 +7,10 @@ permission:
     ".tasks/**": allow
   bash:
     "*": deny
+    "git worktree*": allow
+    "git branch*": allow
+    "git status*": allow
+    "git log*": allow
   doom_loop: ask
   task:
     "*": deny
@@ -66,6 +70,16 @@ agents read it from the file. Your delegation prompt must be short.
 
 ## PHASES (strict order)
 
+### Phase 0 — WORKTREE & BRANCH (mandatory)
+1. Determine a slug from the task intent (kebab-case). Choose branch type: `feat/`, `fix/`, `docs/`, `chore/`, etc. based on objective (Conventional Commits).
+2. Create a dedicated worktree and branch: use `opencode.worktree_create` (preferred) or `git worktree add -b <type>/<slug> ../<repo>-<slug> <base-ref>` with base `main`. 
+3. Move the session to that worktree if possible (`tools.opencode.session_move`) so all subsequent work happens there.
+4. Create the directory `.tasks/<YYYY-MM-DD>-<slug>/` (if not created yet) and prepare to record worktree/branch info.
+5. Record in `brief.md` (append when created): `- Worktree: <absolute/path>` and `- Branch: <type>/<slug>` and `- Base: main`.
+6. Append to `log.md`: `## [ts] orchestrator — worktree created on <branch> (<path>)`
+
+HARD RULE: never work in the main worktree. If already in `main`, stop and create a worktree first. All implementation, test, and verification work must happen in the dedicated worktree.
+
 ### Phase 1 — CLARIFY
 Ask the user ALL necessary questions: scope, expected behavior, acceptance
 criteria, technical constraints, whether UI changes are involved.
@@ -87,6 +101,9 @@ Create the directory `.tasks/<YYYY-MM-DD>-<slug>/` and write `brief.md` with:
 - Stack URLs: read docker-compose.yml to fill this in (frontend URL, backend
   API URL, any other relevant endpoint/port). Ask the user only if the
   compose file leaves it ambiguous.
+- Worktree: <absolute/path>
+- Branch: <type>/<slug>
+- Base: main
 DECISION CAPTURE: if clarifying surfaced architectural or design decisions
 (choice of library, pattern, data model, tradeoffs with real alternatives),
 delegate to `adr-writer` to draft one ADR per decision with Status: Proposed.
@@ -95,6 +112,19 @@ Only the user turns a Proposed ADR into Accepted.
 
 Do not proceed until the user confirms the brief. Append to `log.md`:
 `## [ts] orchestrator — brief v1 confirmed by user`
+
+#### Post-Clarify — SCAFFOLD DETECTION (if repo is empty of app code)
+Check for application code (ignore `.opencode/`, `.tasks/`, `docs/`, root `pyproject.toml` only if scaffolding). Look for real files in `backend/`, `frontend/`, `src/`, `app/`, `api/`, or existing test suites.
+If there is NO application code AND no runnable test setup for the affected area:
+1. Delegate to `implementer` with: "SCAFFOLD BOOTSTRAP: create minimal backend/frontend structure, minimal configs needed to run pytest/vitest, and if required a minimal docker-compose.yml for local services. Follow AGENTS.md §6 (simple FastAPI if backend). Do NOT implement full features. Only what's needed for the first TDD pass. Work in the current worktree/branch."
+2. Append to `log.md`: `## [ts] orchestrator — scaffold delegated to implementer`
+3. Wait for `STATUS: OK` and read the implementer's report. Ensure scaffold is committed per implementer rules.
+
+#### Phase 1.25 — ENVIRONMENT PREP (if backend/frontend need services)
+If affected area includes backend OR the brief requires DB/API/queue:
+- If `docker-compose.yml` missing: delegate to `implementer` to create a minimal, working compose for required services (or ask user).
+- Ensure agents bring up services: `docker compose up -d && docker compose ps` before running suites.
+- Record in `log.md`: `## [ts] orchestrator — environment prep noted`
 
 ### Phase 1.5 — ENVIRONMENT (only when UI is involved)
 If the brief says UI changes AND no `playwright.config.*` exists anywhere in
@@ -166,10 +196,12 @@ deployment of this pipeline after escalation must start a FRESH `.tasks/`
 directory, so the counters reset deliberately, not accidentally.
 
 ### Phase 7 — PULL REQUEST
-Only when ALL verdicts are `PASS`: delegate to `pr-creator` with the pipeline
-path, iteration, and the branch name to integrate (`Branch: <branch>`). It
-opens a PR from that branch to `main` linking the issue and the evidence.
-Append the event to `log.md` and store the PR link in `reports/pr.md`.
+Only when ALL verdicts are `PASS`:
+1. Read `brief.md` to get `Branch: <branch>` and `Worktree: <path>`.
+2. Verify the branch has commits: `git -C <worktree> log --oneline -n 3`. If no commits, STOP and have `test-writer`/`implementer` commit as per their rules.
+3. Delegate to `pr-creator` with pointer handoff including: `Branch: <branch>`, `Base: main`, `Pipeline: .tasks/<dir>/`, `Iteration: <final>`.
+4. Append to `log.md`: `## [ts] orchestrator — PR requested from <branch> to main`
+5. Store PR link from `reports/pr.md`
 
 ### Phase 8 — CLOSE
 Only when the PR is created: append the closing event to `log.md`, summarize

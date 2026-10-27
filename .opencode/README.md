@@ -78,14 +78,15 @@ so the full history can be reconstructed by reading the files top to bottom.
 
 ## The loop
 
-1. Orchestrator asks the user until the brief is unambiguous → writes `brief.md`.
-2. `issue-creator` creates the issue.
-3. `test-writer` writes tests encoding the criteria (they must fail first).
-4. `implementer` implements until tests pass.
-5. `logic-verifier` always; `visual-verifier` if there are UI changes. Both can run in parallel.
-6. If any verdict is `CHANGES`, the orchestrator records an amendment in `brief.md`
-   and goes back to step 4.
-7. Loop safeguards against infinite verify→implement cycles:
+1. **Phase 0**: Orchestrator creates worktree/branch on `<type>/<slug>` and records it in `brief.md`.
+2. Orchestrator asks the user until the brief is unambiguous → writes/updates `brief.md`. If repo has no app code, delegates scaffold to `implementer`.
+3. `issue-creator` creates the issue.
+4. `test-writer` writes tests encoding the criteria (they must fail first) and commits them.
+5. `implementer` implements until tests pass, runs lint/typecheck, and commits with Conventional Commits.
+6. `logic-verifier` always; `visual-verifier` if there are UI changes. Both can run in parallel.
+7. If any verdict is `CHANGES`, the orchestrator records an amendment in `brief.md`
+   and goes back to step 5.
+8. Loop safeguards against infinite verify→implement cycles:
    - The round counter lives in `log.md`, not in the model's memory.
    - HARD LIMIT: 3 verification rounds; a 4th is never started.
    - Verifiers prefix findings that remain unresolved from earlier rounds
@@ -94,9 +95,9 @@ so the full history can be reconstructed by reading the files top to bottom.
    - On hitting the limit or a repeat, the orchestrator STOPS and posts an
      escalation report (criterion status, pending findings, diagnosis, options)
      and waits for the user. A restarted pipeline uses a fresh `.tasks/` dir.
-8. Only when all verdicts are `PASS` does it open a PR (via `pr-creator`) from
-   the task branch to `main`, linking the issue and the evidence.
-9. Then it closes out.
+9. Only when all verdicts are `PASS` does it open a PR (via `pr-creator`) from
+   the task branch to `main`, linking the issue and the evidence. The branch must have commits.
+10. Then it closes out.
 
 ## Decision records (ADRs)
 

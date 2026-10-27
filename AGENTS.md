@@ -34,27 +34,29 @@ Every change must go through the loop defined in:
 
 The loop, in order, is non-negotiable:
 
-1. **Clarify** — ask until the brief is unambiguous; write `brief.md` under
+1. **Worktree/Branch** — orchestrator creates worktree/branch in Phase 0 on `<type>/<slug>` and records in `brief.md`.
+2. **Clarify** — ask until the brief is unambiguous; write `brief.md` under
    `.tasks/<YYYY-MM-DD>-<slug>/` (Objective, Scope, numbered Acceptance
-   Criteria, Constraints, affected area, UI flag, stack URLs). Capture design
+   Criteria, Constraints, affected area, UI flag, stack URLs, Worktree, Branch, Base). Capture design
    decisions as Proposed ADRs. Do not proceed until the user confirms.
-2. **Environment (UI only)** — bootstrap Playwright once if UI changes and no
+3. **Scaffold (if needed)** — if repo has no app code, delegate minimal scaffold to `implementer` before tests.
+4. **Environment (UI only)** — bootstrap Playwright once if UI changes and no
    config exists.
-3. **Issue** — `issue-creator` creates the GitHub issue from the brief.
-4. **Tests** — `test-writer` writes TDD tests that must fail first; every active
-   criterion gets a test.
-5. **Implement** — `implementer` makes tests pass; never touches tests.
-6. **Verify** — `logic-verifier` always (runs both suites + criteria); plus
+5. **Issue** — `issue-creator` creates the GitHub issue from the brief.
+6. **Tests** — `test-writer` writes TDD tests that must fail first; every active
+   criterion gets a test and commits them.
+7. **Implement** — `implementer` makes tests pass; never touches tests; runs lint/typecheck and commits with Conventional Commits.
+8. **Verify** — `logic-verifier` always (runs both suites + criteria); plus
    `visual-verifier` in parallel when UI is involved.
-7. **Loop** — on `CHANGES`: repeat-check (`REPEAT:` findings escalate on second
+9. **Loop** — on `CHANGES`: repeat-check (`REPEAT:` findings escalate on second
    appearance), decision-check (ADR before deviating), else append an
    `## Amendment N` to `brief.md` and re-implement. **Hard limit: 3 verification
    rounds** (`verify-1`, `verify-2`, `verify-3`); a 4th is never started.
    On the limit or a repeat, STOP and post an escalation report; wait for the
    user. A restarted pipeline uses a fresh `.tasks/` directory.
-8. **Pull Request** — only when all verdicts are `PASS`: `pr-creator` opens a
-   PR from the task branch to `main`, linking the issue and the evidence.
-9. **Close** — only when the PR is created: append closing event, summarize,
+10. **Pull Request** — only when all verdicts are `PASS`: `pr-creator` opens a
+   PR from the task branch to `main`, linking the issue and the evidence (branch must have commits).
+11. **Close** — only when the PR is created: append closing event, summarize,
    link the issue, the PR, and the `.tasks/<dir>/` evidence path.
 
 The orchestrator is the only primary agent. Subagents receive pointer-based
@@ -145,7 +147,7 @@ introduced silently.
 - **Worktrees are mandatory.** All implementation, test, and verification work
   happens in a dedicated git worktree, never in the main working tree. The
   orchestrator creates one per task (via `opencode.worktree_create` or
-  `git worktree add`) on a new branch. The main worktree stays on `main` and is
+  `git worktree add`) on a new branch in Phase 0 before any delegation that touches code/tests. The branch name must be recorded in `brief.md`. The main worktree stays on `main` and is
   treated as read-only by agents.
 - **Committing to `main` is forbidden.** If an agent finds itself on `main`,
   it must stop and create a worktree/branch first. Direct commits, force-pushes,

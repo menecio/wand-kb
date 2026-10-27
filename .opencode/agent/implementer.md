@@ -45,6 +45,9 @@ permission:
     "docker compose logs*": allow
     "git status*": allow
     "git diff*": allow
+    "git log*": allow
+    "git add*": allow
+    "git commit*": allow
     "git checkout*": allow
     "git switch*": allow
     "ls*": allow
@@ -109,10 +112,18 @@ Steps:
    they pass before replying. If the suites need backing services (database,
    API), bring the stack up first with `docker compose up -d` and confirm
    health with `docker compose ps`.
-6. Write your report to `.tasks/<dir>/reports/impl-<N>.md` (append-only):
+6. LINT & TYPECHECK BEFORE COMMIT (mandatory):
+   - Backend: `uv run ruff check .` and `uv run mypy .` (fix issues introduced by you)
+   - Frontend: `npx tsc --noEmit` and `npx eslint .` (if applicable)
+   Enforced by pre-commit hook; do not commit if they fail.
+7. COMMIT (conventional):
+   - Stage only files you modified/created (respect test deny rules).
+   - Commit with appropriate type: `feat`, `fix`, `refactor`, `chore`, etc. Example: `feat(kb): implement document upload endpoint`. Explain "why" briefly in body if non-obvious.
+   - Record short SHA in `reports/impl-<N>.md`.
+8. Write your report to `.tasks/<dir>/reports/impl-<N>.md` (append-only):
    files modified (grouped backend/frontend), status of both suites, build
-   status, deviations or questions.
-7. Reply ONLY with:
+   status, lint/typecheck, commit SHA, deviations or questions.
+9. Reply ONLY with:
 STATUS: OK | BLOCKED
 REPORT: <path>
 SUMMARY: <max 3 lines>

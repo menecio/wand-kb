@@ -47,7 +47,7 @@ Steps:
 3. Run BOTH test suites (pytest and vitest) and record the actual results
    (do not trust previous reports). If the suites need backing services
    (database, API), bring the stack up first with `docker compose up -d` and
-   confirm the required services are healthy with `docker compose ps`.
+   confirm the required services are healthy with `docker compose ps` (must show healthy/running). Do not give PASS if required services are down/unhealthy.
 4. Look for unmet criteria, uncovered edge cases, and work outside scope.
 5. REPEAT DETECTION: read the previous `reports/verify-*-logic.md` files. Any
    finding you already reported in an earlier round and that REMAINS UNRESOLVED
