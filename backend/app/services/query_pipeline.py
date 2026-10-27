@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import uuid
 from typing import Any
 
@@ -76,6 +77,121 @@ def _apply_context_budget(chunks: list[dict], max_tokens: int) -> list[dict]:
     return selected
 
 
+_NUMBER_PATTERN = re.compile(r"\b\d+(?:\.\d+)?\b")
+_WRITTEN_NUMBERS: dict[str, int] = {
+    "zero": 0,
+    "one": 1,
+    "two": 2,
+    "three": 3,
+    "four": 4,
+    "five": 5,
+    "six": 6,
+    "seven": 7,
+    "eight": 8,
+    "nine": 9,
+    "ten": 10,
+    "eleven": 11,
+    "twelve": 12,
+    "thirteen": 13,
+    "fourteen": 14,
+    "fifteen": 15,
+    "sixteen": 16,
+    "seventeen": 17,
+    "eighteen": 18,
+    "nineteen": 19,
+    "twenty": 20,
+    "thirty": 30,
+    "forty": 40,
+    "fifty": 50,
+    "hundred": 100,
+}
+
+
+def _extract_numbers(text: str) -> set[float]:
+    """Extract numeric values from text, including common written-out numbers."""
+    numbers: set[float] = set()
+    for match in _NUMBER_PATTERN.finditer(text):
+        try:
+            numbers.add(float(match.group()))
+        except ValueError:
+            continue
+    lower = text.lower()
+    for word, value in _WRITTEN_NUMBERS.items():
+        if re.search(rf"\b{word}\b", lower):
+            numbers.add(float(value))
+    return numbers
+
+
+def _format_number(value: float) -> str:
+    """Format a number for display, dropping trailing .0 for integers."""
+    if value == int(value):
+        return str(int(value))
+    return str(value)
+
+
+def _detect_numeric_conflicts(
+    facets: list[Facet], context_by_id: dict[str, dict]
+) -> tuple[list[Facet], list[str]]:
+    """Downgrade ANSWERED facets whose cited excerpts contain conflicting numbers.
+
+    Returns the updated facets and a list of missing_info entries describing
+    each detected conflict. Model self-reported CONFLICTING facets are preserved.
+    """
+    updated: list[Facet] = []
+    conflicts: list[str] = []
+    for facet in facets:
+        if facet.status != FacetStatus.ANSWERED:
+            updated.append(facet)
+            continue
+
+        # Collect numbers per citation excerpt.
+        number_occurrences: list[tuple[float, str, str]] = []
+        for cid in facet.citation_ids:
+            chunk = context_by_id.get(cid)
+            if not chunk:
+                continue
+            text = chunk.get("text", "")
+            source = chunk.get("metadata", {}).get("source", cid)
+            for number in _extract_numbers(text):
+                number_occurrences.append((number, cid, source))
+
+        # Find the first pair of distinct numbers from different citations.
+        conflict_found = False
+        value_a = value_b = ""
+        source_a = source_b = ""
+        for i, (num_a, cid_a, src_a) in enumerate(number_occurrences):
+            for num_b, cid_b, src_b in number_occurrences[i + 1 :]:
+                if cid_a == cid_b:
+                    continue
+                if num_a != num_b:
+                    conflict_found = True
+                    value_a = _format_number(num_a)
+                    value_b = _format_number(num_b)
+                    source_a = src_a
+                    source_b = src_b
+                    break
+            if conflict_found:
+                break
+
+        if conflict_found:
+            gap = (
+                f"Conflicting values for '{facet.description}': "
+                f"{value_a} (from {source_a}) vs {value_b} (from {source_b})."
+            )
+            conflicts.append(gap)
+            updated.append(
+                Facet(
+                    description=facet.description,
+                    status=FacetStatus.CONFLICTING,
+                    citation_ids=facet.citation_ids,
+                    associated_gap=gap,
+                )
+            )
+        else:
+            updated.append(facet)
+    return updated, conflicts
+
+
 def _build_prompt(question: str, context_chunks: list[dict]) -> str:
     """Build a facet-driven prompt asking only for chunk ids in citations."""
     context = "\n\n".join(
@@ -101,6 +217,9 @@ def _build_prompt(question: str, context_chunks: list[dict]) -> str:
         "optional suggested_query\n"
         "- facets: list of objects with description, status, citation_ids (chunk ids only), "
         "and associated_gap (string or null)\n\n"
+        "Completeness rule: set is_complete=true ONLY when every material facet is ANSWERED "
+        "and no material gaps, uncertainties, or conflicts remain. If any facet is "
+        "PARTIAL, MISSING, UNCERTAIN, or CONFLICTING, set is_complete=false.\n\n"
         f"Question: {question}\n\n"
         f"Context:\n{context}\n\n"
         "Respond with valid JSON only."
@@ -167,6 +286,9 @@ def _validate_and_assemble(
             )
         )
 
+    # ADR 0016: deterministic backend conflict detection for cited excerpts.
+    facets, conflict_gaps = _detect_numeric_conflicts(facets, context_by_id)
+
     # Build citations from local storage; ignore model-provided metadata.
     cited_ids: set[str] = set()
     for facet in facets:
@@ -194,7 +316,7 @@ def _validate_and_assemble(
             )
         )
 
-    missing_info = _coerce_list(raw.missing_info)
+    missing_info = _coerce_list(raw.missing_info) + conflict_gaps
     enrichment_suggestions = [
         _coerce_enrichment_suggestion(s) for s in _coerce_list(raw.enrichment_suggestions)
     ]
@@ -222,6 +344,10 @@ def _validate_and_assemble(
     # IR-3: completeness implies no missing info / gap facets.
     if is_complete and has_gaps:
         is_complete = False
+
+    # Material conflicts are surfaced as uncertainty, not HIGH confidence.
+    if conflict_gaps and confidence == ConfidenceLevel.HIGH:
+        confidence = ConfidenceLevel.LOW
 
     # IR-6: suggestions must reference a gap.
     gaps = set(missing_info)
