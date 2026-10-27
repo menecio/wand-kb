@@ -157,6 +157,9 @@ introduced silently.
   Breaking changes use `!` after type/scope or a `BREAKING CHANGE:` footer.
 - Commits are made inside the worktree on its branch; the main worktree never
   receives commits. Cleanup (`worktree_remove`) only after user confirms merge.
+- **No merge commits.** Integrations into `main` must be done via rebase
+  (fast-forward only): `git rebase <branch>` or `git merge --ff-only`. Never
+  create a merge commit targeting `main`.
 - Never rewrite published history; prefer new commits over amends on shared
   branches.
 
