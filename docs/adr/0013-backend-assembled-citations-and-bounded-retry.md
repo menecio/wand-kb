@@ -1,0 +1,12 @@
+# 0013. Backend-assembled citations with facet-driven generation and bounded retry
+
+- Status: Accepted
+- Date: 2026-10-27
+- Context: Citations are currently filtered by `chunk_id in context_ids` but their metadata (document name, section, excerpt, relevance score) is taken from model output, violating the invariant that citation metadata come from local storage. Generation must use the facet decomposition (`ANSWERED`/`PARTIAL`/`MISSING`/`UNCERTAIN`/`CONFLICTING`) and be validated against the integrity rules IR-1..IR-6 in `backend/docs/INTEGRITY_RULES.md` (no facet answered without evidence, no factual answer without citations, no contradiction between `is_complete` and `missing_info`, etc.). Invalid or invariant-violating output must not be presented as a valid answer.
+- Decision: The model proposes only chunk ids (plus answer text, facet statuses, `missing_info`, suggestions, and `confidence`); the backend validates the structured output against IR-1..IR-6 and assembles every citation's document name, section, excerpt, and relevance score from the retrieved Qdrant payloads / local storage. On structurally invalid output or an invariant violation, the system performs at most one bounded retry (feeding the validation errors back); if the second attempt also fails, it returns a controlled error response — never unvalidated free text presented as a valid answer.
+- Alternatives considered:
+  - Trusting model-generated citation metadata — rejected because it permits hallucinated document names, pages, excerpts, and scores, directly violating citation integrity.
+  - Unlimited retries until valid output — rejected because it can hang and inflate cost; the contract requires a bounded single retry (AC-30).
+  - Free-text fallback answer on failure — rejected because presenting unvalidated text as a valid answer is explicitly forbidden; a controlled error is required.
+  - Schema validation only, no semantic invariants — rejected because IR-1..IR-6 catch semantic contradictions (e.g. `is_complete=true` with non-empty `missing_info`, an answered facet with no citation) that JSON-schema checks alone cannot.
+- Consequences: Citation integrity is guaranteed by the backend regardless of model behavior. Trade-off: validation and assembly code is added; the bounded retry adds latency on bad outputs; failures surface as controlled, non-misleading errors; correctness depends on IR-1..IR-6 being authored and kept in sync with the schemas.

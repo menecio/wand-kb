@@ -1,0 +1,13 @@
+# 0014. Robust ingestion: persisted JSON registry, content-hash idempotency, per-file results
+
+- Status: Accepted
+- Date: 2026-10-27
+- Context: The document registry is an in-memory dict lost on restart, and `content_sha256` is computed but never checked, so duplicate uploads create new ids, embeddings, and vectors. Upload results use `accepted`/`rejected` lists that hide per-file outcomes. The same filename with different content currently risks silent overwrite. The core must survive restarts, make ingestion idempotent, expose per-file results and errors, and let same-name/different-content documents coexist (D1, D2, D6).
+- Decision: Persist the document registry as a JSON file on the `app_data` volume using atomic write-to-temp + rename, reloaded on startup (D6). Use the SHA-256 content hash as the ingestion identity: identical bytes return the existing `document_id` with status `DUPLICATE` and generate no new embeddings or vectors (filename is metadata, never identity). Replace the `accepted`/`rejected` lists in `DocumentUploadResult` with `results[]` of `{filename, status: READY|FAILED|REJECTED|DUPLICATE, document_id, error}` (D2). The same filename with different content coexists as a separate document with a new `document_id` and no overwrite, explicitly reported (D1).
+- Alternatives considered:
+  - SQLite or another storage engine — rejected because a new storage engine is explicitly out of scope; a JSON file is the simplest thing that works for a single-user prototype with no new dependencies.
+  - In-memory registry with periodic dump — rejected because a crash/restart loses state; atomic writes are required for durability.
+  - Filename-based idempotency — rejected because same-name/different-content must coexist; the content hash, not the filename, is the identity.
+  - Overwriting on same filename — rejected because it silently destroys the prior document, files, and vectors, violating D1.
+  - Keeping `accepted`/`rejected` alongside `results[]` — rejected because the single `results[]` contract is clearer and matches the per-file outcome DoD criteria (AC-5).
+- Consequences: Durable, restart-surviving registry; idempotent uploads with no duplicate vectors; visible per-file errors; explicit handling of filename collisions. Trade-off: JSON-file concurrency is limited to a single process (acceptable for a single-user prototype); registry size grows with the document count.
