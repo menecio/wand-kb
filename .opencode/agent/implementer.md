@@ -33,6 +33,7 @@ permission:
     "uv remove*": allow
     "uv sync*": allow
     "uv lock*": allow
+    "uv*": allow
     "npm test*": allow
     "npx vitest*": allow
     "npm run test*": allow

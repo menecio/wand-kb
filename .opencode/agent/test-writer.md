@@ -30,6 +30,7 @@ permission:
     "npm test*": allow
     "npx vitest*": allow
     "npm run test*": allow
+    "uv*": allow
     "uv run ruff*": allow
     "uv run mypy*": allow
     "npx tsc*": allow
