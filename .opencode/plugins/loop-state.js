@@ -1,7 +1,4 @@
-// State machine for the multi-agent pipeline.
-// Enforces phase ordering by deriving state from .tasks/ and blocking
-// illegal tool calls before they execute.
-
+import { Plugin } from "@opencode/plugin"
 import fs from "node:fs"
 import path from "node:path"
 
@@ -15,25 +12,6 @@ function latestTaskDir(directory) {
     .sort()
   if (dirs.length === 0) return null
   return path.join(tasksDir, dirs[dirs.length - 1])
-}
-
-function allVerdictsPass(taskDir) {
-  if (!taskDir) return false
-  const reportsDir = path.join(taskDir, "reports")
-  if (!fs.existsSync(reportsDir)) return false
-  const files = fs.readdirSync(reportsDir)
-  const logicReports = files.filter((f) => /^verify-.*-logic\.md$/.test(f))
-  if (logicReports.length === 0) return false
-  for (const f of logicReports) {
-    const content = fs.readFileSync(path.join(reportsDir, f), "utf8")
-    if (!/VERDICT:\s*PASS/i.test(content)) return false
-  }
-  const visualReports = files.filter((f) => /^verify-.*-visual\.md$/.test(f))
-  for (const f of visualReports) {
-    const content = fs.readFileSync(path.join(reportsDir, f), "utf8")
-    if (!/VERDICT:\s*PASS/i.test(content)) return false
-  }
-  return true
 }
 
 function readState(directory) {
@@ -69,6 +47,25 @@ function readState(directory) {
   }
 }
 
+function allVerdictsPass(taskDir) {
+  if (!taskDir) return false
+  const reportsDir = path.join(taskDir, "reports")
+  if (!fs.existsSync(reportsDir)) return false
+  const files = fs.readdirSync(reportsDir)
+  const logicReports = files.filter((f) => /^verify-.*-logic\.md$/.test(f))
+  if (logicReports.length === 0) return false
+  for (const f of logicReports) {
+    const content = fs.readFileSync(path.join(reportsDir, f), "utf8")
+    if (!/VERDICT:\s*PASS/i.test(content)) return false
+  }
+  const visualReports = files.filter((f) => /^verify-.*-visual\.md$/.test(f))
+  for (const f of visualReports) {
+    const content = fs.readFileSync(path.join(reportsDir, f), "utf8")
+    if (!/VERDICT:\s*PASS/i.test(content)) return false
+  }
+  return true
+}
+
 function relPath(directory, filePath) {
   if (!filePath) return null
   if (path.isAbsolute(filePath)) {
@@ -80,14 +77,8 @@ function relPath(directory, filePath) {
 function isSafePath(rel) {
   if (!rel) return false
   const normalized = rel.replace(/\\/g, "/")
-  const safePrefixes = [
-    ".tasks/",
-    "docs/adr/",
-    ".opencode/",
-  ]
-  const safeExact = [
-    "pyproject.toml",
-  ]
+  const safePrefixes = [".tasks/", "docs/adr/", ".opencode/"]
+  const safeExact = ["pyproject.toml"]
   const safePatterns = [
     /^tests\//,
     /\/tests\//,
@@ -111,12 +102,13 @@ function isSafePath(rel) {
   return false
 }
 
-export const LoopStateMachine = async ({ directory }) => {
-  return {
-    "tool.execute.before": async (input, output) => {
+export default Plugin.define({
+  id: "loop-state",
+  async setup(ctx) {
+    const directory = ctx.location?.directory || process.cwd()
+    await ctx.tool.hook("execute.before", async (input, output) => {
       const state = readState(directory)
 
-      // Gate delegations (task tool)
       if (input.tool === "task") {
         const subagent = output.args?.subagent_type
         if (subagent === "issue-creator" && !state.briefExists) {
@@ -134,15 +126,14 @@ export const LoopStateMachine = async ({ directory }) => {
         if (subagent === "visual-verifier" && !state.hasImpl) {
           throw new Error("LOOP-STATE: implementation must exist before visual-verifier (Phase 4)")
         }
-        if (subagent === "pr-creator" && !state.allVerdictsPass) {
-          throw new Error("LOOP-STATE: all verification verdicts must be PASS before pr-creator (Phase 7)")
-        }
         if (subagent === "playwright-setup" && !state.briefExists) {
           throw new Error("LOOP-STATE: brief must exist before playwright-setup (Phase 1)")
         }
+        if (subagent === "pr-creator" && !state.allVerdictsPass) {
+          throw new Error("LOOP-STATE: all verification verdicts must be PASS before pr-creator (Phase 7)")
+        }
       }
 
-      // Gate file writes when no tests exist yet
       if (input.tool === "write" || input.tool === "edit" || input.tool === "apply_patch") {
         if (!state.hasTests) {
           const rel = relPath(directory, output.args?.filePath || output.args?.path || output.args?.file)
@@ -151,8 +142,6 @@ export const LoopStateMachine = async ({ directory }) => {
           }
         }
       }
-    },
-  }
-}
-
-export default LoopStateMachine
+    })
+  },
+})
