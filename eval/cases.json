@@ -1,0 +1,82 @@
+[
+  {
+    "id": "case_01",
+    "question": "How many vacation days do employees get?",
+    "expected_behavior": "exact_answer",
+    "expected_sources": ["company_policy.md"],
+    "expected_completeness": "complete",
+    "notes": "Direct single-document answer from company_policy.md. Tests retrieval of a specific numeric policy value."
+  },
+  {
+    "id": "case_02",
+    "question": "What is the price of SmartWidget Pro?",
+    "expected_behavior": "exact_answer",
+    "expected_sources": ["product_specs.txt"],
+    "expected_completeness": "complete",
+    "notes": "Direct single-document answer with a specific number from product_specs.txt."
+  },
+  {
+    "id": "case_03",
+    "question": "What are the company policies and what products do we sell?",
+    "expected_behavior": "partial_answer",
+    "expected_sources": ["company_policy.md", "product_specs.txt"],
+    "expected_completeness": "complete",
+    "notes": "Multi-document synthesis combining company policies and product information."
+  },
+  {
+    "id": "case_04",
+    "question": "What is the competitor's pricing strategy?",
+    "expected_behavior": "no_answer",
+    "expected_sources": [],
+    "expected_completeness": "insufficient",
+    "notes": "Information not present in any document. Tests graceful handling of out-of-scope queries."
+  },
+  {
+    "id": "case_05",
+    "question": "Tell me about the project",
+    "expected_behavior": "clarifying_question",
+    "expected_sources": [],
+    "expected_completeness": "insufficient",
+    "notes": "Ambiguous question that could refer to multiple projects or documents; system should ask for clarification."
+  },
+  {
+    "id": "case_06",
+    "question": "What is the model number for the device with 12-hour battery?",
+    "expected_behavior": "exact_answer",
+    "expected_sources": ["product_specs.txt"],
+    "expected_completeness": "complete",
+    "notes": "Exact identifier lookup: maps a specification (12-hour battery) to the product name SmartWidget Pro."
+  },
+  {
+    "id": "case_07",
+    "question": "Who is responsible for backend development?",
+    "expected_behavior": "exact_answer",
+    "expected_sources": ["meeting_notes.pdf"],
+    "expected_completeness": "complete",
+    "notes": "Information located in meeting notes action items. Tests retrieval of a named responsibility."
+  },
+  {
+    "id": "case_08",
+    "question": "Are there any conflicts in the documents?",
+    "expected_behavior": "no_answer",
+    "expected_sources": [],
+    "expected_completeness": "complete",
+    "notes": "No contradictions exist across the documents. Tests ability to report absence of conflicts."
+  },
+  {
+    "id": "case_09",
+    "question": "When is the project deadline?",
+    "expected_behavior": "exact_answer",
+    "expected_sources": ["meeting_notes.pdf"],
+    "expected_completeness": "complete",
+    "notes": "Date-based query requiring extraction of June 30, 2024 from meeting_notes.pdf."
+  },
+  {
+    "id": "case_10",
+    "question": "What are the product specifications and who approved the budget?",
+    "expected_behavior": "partial_answer",
+    "expected_sources": ["product_specs.txt", "meeting_notes.pdf"],
+    "expected_completeness": "complete",
+    "notes": "Complex multi-facet question combining product specifications with budget approval details from meeting notes."
+  }
+]
