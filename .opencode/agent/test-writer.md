@@ -13,6 +13,10 @@ permission:
     "**/*.spec.ts": allow
     "**/*.spec.tsx": allow
     "e2e/**": allow
+    "**/tests/**": allow
+    "**/test/**": allow
+    "**/__tests__/**": allow
+    "**/conftest.py": allow
     "**/requirements*.txt": deny
     "**/requirements.txt": deny
     "**/Pipfile": deny
