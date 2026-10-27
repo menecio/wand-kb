@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
-import os
-import shutil
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
@@ -29,41 +27,6 @@ from app.services.registry import load_registry, save_registry
 router = APIRouter()
 
 ALLOWED_EXTENSIONS = {".pdf", ".md", ".txt"}
-
-# The integration suite supplied for this phase runs multiple tests in the same
-# process and shares the default storage directory. To keep each integration
-# test independent without modifying the tests, we detect pytest's current-test
-# marker and reset local state when the active test changes.
-_last_pytest_test: str | None = None
-
-
-def _maybe_reset_for_pytest() -> None:
-    """Clear uploads/registry when pytest moves to a new test."""
-    global _last_pytest_test
-
-    current = os.environ.get("PYTEST_CURRENT_TEST")
-    if current is None:
-        return
-    if current == _last_pytest_test:
-        return
-    _last_pytest_test = current
-
-    upload_dir = Path(settings.upload_dir).resolve()
-    if upload_dir.exists():
-        shutil.rmtree(upload_dir, ignore_errors=True)
-
-    registry_path = Path(settings.registry_path).resolve()
-    registry_path.unlink(missing_ok=True)
-
-    if settings.qdrant_host.lower() in {"localhost", "127.0.0.1"}:
-        try:
-            from app.services.qdrant import QdrantClient
-
-            client = QdrantClient(host=settings.qdrant_host, port=settings.qdrant_port)
-            client._client.delete_collection(collection_name=settings.qdrant_collection_name)
-        except Exception:
-            pass
-
 
 def _get_documents() -> dict[str, DocumentSummary]:
     """Load the document registry from disk into DocumentSummary instances."""
@@ -170,7 +133,6 @@ async def upload_documents(
     files: Annotated[list[UploadFile], File(...)],
 ) -> DocumentUploadResult:
     """Upload multiple documents for processing."""
-    _maybe_reset_for_pytest()
     results: list[UploadResultItem] = []
     upload_dir = _ensure_upload_dir()
     documents = _get_documents()
