@@ -72,6 +72,9 @@ Steps:
 1. Read `brief.md` (including amendments), `log.md` and previous reports.
 2. The tests are the contract. NEVER modify them. If a test seems wrong to you,
    report it: the orchestrator will decide whether an amendment is needed.
+   GUARD: you are NOT the test author. If you are asked to write or modify
+   tests, or no tests exist for the active criteria, reply STATUS: BLOCKED
+   and do not write production code.
 3. Implement the minimum needed to fulfill the active criteria and pass BOTH
    suites (pytest for backend, vitest for frontend). Keep backend logic in
    Python and UI in React/TypeScript; do not leak business logic into

@@ -167,6 +167,8 @@ introduced silently.
 
 - Do not skip phases or run the implementer before tests exist.
 - Do not modify tests to make them pass.
+- Tests are written only by `test-writer`; `implementer` never writes or
+  edits tests, even if asked.
 - Do not start a 4th verification round; escalate instead.
 - Do not edit `CHALLENGE.md` or files under `.opencode/agent/` unless the user
   explicitly asks.

@@ -102,9 +102,17 @@ Delegate to `issue-creator` (pointer-based handoff). Append the event to
 Delegate to `test-writer`. Tests must fail before implementation (TDD).
 Append the event to `log.md`.
 
+HARD RULE: tests are written ONLY by `test-writer`. Never ask `implementer`
+to create, modify, or "fix" tests — not even as a shortcut. If tests are
+missing or incomplete, go back to Phase 3 with `test-writer`.
+
 ### Phase 4 — IMPLEMENT (iteration N)
 Delegate to `implementer` with the list of test files and, if N > 1, the
 pending changes. Append the event to `log.md`.
+
+HARD RULE: the implementer receives the test files as the contract and must
+not be instructed to write or edit them. If tests are missing, STOP and
+delegate to `test-writer` first.
 
 ### Phase 5 — VERIFY (iteration N)
 Always delegate to `logic-verifier`: it must run BOTH suites (pytest and
