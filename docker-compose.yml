@@ -20,10 +20,12 @@ services:
 
   qdrant:
     image: qdrant/qdrant:latest
+    ports:
+      - "127.0.0.1:6333:6333"
     volumes:
       - qdrant_data:/qdrant/storage
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:6333/healthz || exit 1"]
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/6333'"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -31,6 +33,8 @@ services:
 
   ollama:
     image: ollama/ollama:latest
+    ports:
+      - "127.0.0.1:11434:11434"
     volumes:
       - ollama_data:/root/.ollama
     healthcheck:
@@ -39,6 +43,21 @@ services:
       timeout: 5s
       retries: 10
       start_period: 30s
+
+  ollama-init:
+    image: ollama/ollama:latest
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    volumes:
+      - ollama_data:/root/.ollama
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        ollama pull nomic-embed-text && ollama pull qwen2.5:3b
+    depends_on:
+      ollama:
+        condition: service_healthy
+    restart: "no"
 
 volumes:
   app_data:

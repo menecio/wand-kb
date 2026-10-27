@@ -26,6 +26,14 @@ class Settings(BaseSettings):
     # Upload storage
     upload_dir: str = "data/uploads"
 
+    # Document registry persistence
+    registry_path: str = "data/registry.json"
+
+    # Retrieval configuration
+    retrieval_top_k: int = 5
+    retrieval_threshold: float = 0.55
+    max_context_tokens: int = 2048
+
     # Server configuration
     host: str = "127.0.0.1"
     port: int = 8000
