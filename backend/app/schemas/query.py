@@ -81,3 +81,27 @@ class QueryResponse(BaseModel):
             )
 
         return self
+
+
+class SearchRequest(BaseModel):
+    """Request model for semantic search over the knowledge base."""
+
+    query: str = Field(..., min_length=1, max_length=10000)
+    top_k: int = Field(default=5, ge=1, le=50)
+
+
+class SearchResult(BaseModel):
+    """A single ranked chunk returned by semantic search."""
+
+    chunk_id: str
+    document_id: str
+    document_name: str
+    section: str | None = None
+    excerpt: str
+    score: float
+
+
+class SearchResponse(BaseModel):
+    """Response model for semantic search."""
+
+    results: list[SearchResult]

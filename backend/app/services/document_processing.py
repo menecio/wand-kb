@@ -11,6 +11,37 @@ def extract_text_from_markdown(file_path: Path) -> str:
     return Path(file_path).read_text(encoding="utf-8")
 
 
+def extract_text_from_pdf(file_path: Path) -> str:
+    """Extract text from a PDF file using PyMuPDF."""
+    import pymupdf
+
+    document = pymupdf.open(file_path)
+    pages: list[str] = []
+    for page_number in range(len(document)):
+        page = document.load_page(page_number)
+        text = page.get_text()
+        if text:
+            pages.append(text)
+    return "\n\n".join(pages)
+
+
+def extract_text_from_txt(file_path: Path) -> str:
+    """Read a plain-text file and return its contents."""
+    return Path(file_path).read_text(encoding="utf-8")
+
+
+def extract_text(file_path: Path) -> str:
+    """Extract text from a supported file based on its extension."""
+    suffix = file_path.suffix.lower()
+    if suffix == ".pdf":
+        return extract_text_from_pdf(file_path)
+    if suffix == ".md":
+        return extract_text_from_markdown(file_path)
+    if suffix == ".txt":
+        return extract_text_from_txt(file_path)
+    raise ValueError(f"Unsupported file type: {suffix}")
+
+
 def _split_by_headings(text: str) -> list[tuple[str | None, str]]:
     """Split Markdown text into (heading, section_text) pairs."""
     pattern = re.compile(r"^(#{1,6}\s+.*)$", re.MULTILINE)

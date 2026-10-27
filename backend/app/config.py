@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     chunk_size: int = 1000
     chunk_overlap: int = 200
 
+    # Upload storage
+    upload_dir: str = "data/uploads"
+
     # Server configuration
     host: str = "127.0.0.1"
     port: int = 8000
