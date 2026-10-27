@@ -1,6 +1,6 @@
 # 0009. Embeddings via OpenAI
 
-- Status: Proposed
+- Status: Superseded by 0011
 - Date: 2026-10-27
 - Context: The RAG pipeline needs text embeddings for retrieval and a generative model for structured answers (`answer`, `confidence`, `missing_info`). Using one provider for both reduces integration surface and leverages high-quality, maintained models. A local embedding model would add heavy dependencies and hardware requirements.
 - Decision: Use OpenAI for embeddings (`text-embedding-3-small`, 1536 dims) and generation (`gpt-4o-mini` with structured outputs).

@@ -1,0 +1,12 @@
+# 0012. Threshold-gated dense retrieval with early exit on insufficient evidence
+
+- Status: Accepted
+- Date: 2026-10-27
+- Context: Retrieval currently runs a bare `top_k` query with no threshold, no deduplication, and no context-token budget, and generation is always invoked even for irrelevant queries. The core must distinguish "insufficient evidence" deterministically rather than relying on the model to say "I don't know", and must avoid spending a generation call on queries with no relevant fragments. The strategy stays dense-only (no hybrid search or reranking, which are out of scope until measured).
+- Decision: Use dense retrieval (Qdrant, cosine similarity) with a configurable minimum cosine-similarity threshold. When no retrieved fragment passes the threshold, do not invoke the generative model at all and return a structured `INSUFFICIENT_DATA` response (`is_complete=false`, empty citations, no substantive factual claims, generic suggestions, and a message stating evidence was not retrieved). Observability per D4: a structured log line recording retrieval scores, the gating decision, and `generation_invoked`, plus a deterministic pytest that spies on the generation client and asserts it is not called. The threshold is calibrated against the evaluation cases; false rejections and false acceptances are recorded in a committed evidence file (`eval/CALIBRATION.md`).
+- Alternatives considered:
+  - Hybrid search / reranking — rejected because it is explicitly out of scope and would solve problems not yet measured, adding infrastructure and tuning burden.
+  - Always invoking generation with an "I don't know" prompt — rejected because it depends on the model choosing to abstain and still spends a generation call; the requirement is that the gate not depend solely on model behavior.
+  - Abstention based on model confidence only — rejected because a small local model can hallucinate or over-claim; the gate must be deterministic on retrieval scores.
+  - A fixed, universal threshold copied from another project — rejected because the threshold must be justified by our own evaluation cases, accounting for both false rejections and false acceptances.
+- Consequences: Deterministic early exit saves generation calls and guarantees no factual claims on irrelevant queries. Trade-off: requires calibration work and a committed evidence file; threshold tuning affects both false rejections and false acceptances and must be re-evaluated if the embedding model or chunking changes.
