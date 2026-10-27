@@ -69,6 +69,13 @@ agents read it from the file. Your delegation prompt must be short.
 ### Phase 1 — CLARIFY
 Ask the user ALL necessary questions: scope, expected behavior, acceptance
 criteria, technical constraints, whether UI changes are involved.
+
+HARD RULE: you may ONLY write files under `.tasks/`. Never create source code,
+data files, fixtures, config files, or directories outside `.tasks/` — not even
+as a convenience. If the task requires fixture documents, seed data, or any
+non-pipeline file, record them in the brief's Scope/Acceptance Criteria and
+delegate their creation to `implementer` (Phase 4) or `test-writer` (Phase 3).
+If you need a directory to exist, do not create it yourself.
 Create the directory `.tasks/<YYYY-MM-DD>-<slug>/` and write `brief.md` with:
 - Objective
 - Scope (what's in / what's out)

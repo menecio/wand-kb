@@ -107,10 +107,11 @@ export default Plugin.define({
   async setup(ctx) {
     const directory = ctx.location?.directory || process.cwd()
     await ctx.tool.hook("execute.before", async (input, output) => {
+      const args = (output && output.args) || (input && input.args) || {}
       const state = readState(directory)
 
       if (input.tool === "task") {
-        const subagent = output.args?.subagent_type
+        const subagent = args.subagent_type
         if (subagent === "issue-creator" && !state.briefExists) {
           throw new Error("LOOP-STATE: brief.md must exist before issue-creator (Phase 1)")
         }
@@ -136,7 +137,7 @@ export default Plugin.define({
 
       if (input.tool === "write" || input.tool === "edit" || input.tool === "apply_patch") {
         if (!state.hasTests) {
-          const rel = relPath(directory, output.args?.filePath || output.args?.path || output.args?.file)
+          const rel = relPath(directory, args.filePath || args.path || args.file)
           if (!isSafePath(rel)) {
             throw new Error("LOOP-STATE: cannot write code files before tests exist (Phase 3). Only .tasks/, docs/adr/, tests, e2e, config files allowed.")
           }

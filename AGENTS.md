@@ -169,6 +169,9 @@ introduced silently.
 
 - Do not skip phases or run the implementer before tests exist.
 - Do not modify tests to make them pass.
+- The orchestrator writes ONLY under `.tasks/`. It must never create source
+  code, data, fixtures, or config files; delegate those to implementer/
+  test-writer.
 - Tests are written only by `test-writer`; `implementer` never writes or
   edits tests, even if asked.
 - Do not start a 4th verification round; escalate instead.
