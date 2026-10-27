@@ -61,6 +61,17 @@ class QdrantClient:
                 return
             raise QdrantConnectionError(f"Failed to create Qdrant collection {name}: {exc}") from exc
 
+    def delete_collection(self, collection_name: str) -> None:
+        """Delete a collection, ignoring the case where it does not exist."""
+        try:
+            self._client.delete_collection(collection_name=collection_name)
+        except Exception as exc:
+            if "doesn't exist" in str(exc).lower() or "not found" in str(exc).lower():
+                return
+            raise QdrantConnectionError(
+                f"Failed to delete Qdrant collection {collection_name}: {exc}"
+            ) from exc
+
     def ensure_collection(self, name: str, dimensions: int) -> None:
         """Create the collection only if it does not already exist."""
         try:
