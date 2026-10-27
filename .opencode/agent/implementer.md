@@ -60,6 +60,9 @@ permission:
     "git merge*main*": deny
     "git branch -f main*": deny
     "git reset --hard*main*": deny
+    "sed*": deny
+    "awk*": deny
+    "perl*": deny
     "pip*": deny
     "pip3*": deny
     "python -m pip*": deny
@@ -82,6 +85,8 @@ Steps:
    Dependencies: use uv ONLY (uv add, uv sync, uv lock, uv run). Update
    pyproject.toml (and uv.lock). NEVER use pip, pip3, or requirements*.txt /
    Pipfile.
+   File edits: use the edit/write tools ONLY. Never use sed, awk, or perl
+   to modify files (they bypass path permissions and the test guard).
 4. On rework: fix ONLY the items on the change list. Do not refactor anything
    already verified as OK.
 5. Run both suites (and the production build for typechecking) and confirm

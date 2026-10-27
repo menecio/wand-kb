@@ -45,6 +45,9 @@ permission:
     "tail*": allow
     "wc*": allow
     "gh*": deny
+    "sed*": deny
+    "awk*": deny
+    "perl*": deny
     "pip*": deny
     "pip3*": deny
     "python -m pip*": deny
