@@ -19,7 +19,7 @@ permission:
     "**/Pipfile.lock": deny
     ".tasks/**": allow
   bash:
-    "*": deny
+    "*": ask
     "pytest*": allow
     "python -m pytest*": allow
     "uv run pytest*": allow
