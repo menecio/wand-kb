@@ -2,8 +2,8 @@
 // Enforces phase ordering by deriving state from .tasks/ and blocking
 // illegal tool calls before they execute.
 
-const fs = require("node:fs")
-const path = require("node:path")
+import fs from "node:fs"
+import path from "node:path"
 
 function latestTaskDir(directory) {
   const tasksDir = path.join(directory, ".tasks")
@@ -91,7 +91,7 @@ function isSafePath(rel) {
   return false
 }
 
-const LoopStateMachine = async ({ directory }) => {
+export const LoopStateMachine = async ({ directory }) => {
   return {
     "tool.execute.before": async (input, output) => {
       const state = readState(directory)
@@ -132,7 +132,4 @@ const LoopStateMachine = async ({ directory }) => {
   }
 }
 
-module.exports = { LoopStateMachine }
-module.exports.default = LoopStateMachine
-export { LoopStateMachine }
 export default LoopStateMachine
