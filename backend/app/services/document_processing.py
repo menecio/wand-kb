@@ -1,7 +1,7 @@
 """Document text extraction and Markdown-aware chunking."""
 
-import hashlib
 import re
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -34,12 +34,18 @@ def extract_text(file_path: Path) -> str:
     """Extract text from a supported file based on its extension."""
     suffix = file_path.suffix.lower()
     if suffix == ".pdf":
-        return extract_text_from_pdf(file_path)
-    if suffix == ".md":
-        return extract_text_from_markdown(file_path)
-    if suffix == ".txt":
-        return extract_text_from_txt(file_path)
-    raise ValueError(f"Unsupported file type: {suffix}")
+        text = extract_text_from_pdf(file_path)
+    elif suffix == ".md":
+        text = extract_text_from_markdown(file_path)
+    elif suffix == ".txt":
+        text = extract_text_from_txt(file_path)
+    else:
+        raise ValueError(f"Unsupported file type: {suffix}")
+
+    stripped = text.strip()
+    if not stripped:
+        raise ValueError("No extractable text found in document")
+    return stripped
 
 
 def _split_by_headings(text: str) -> list[tuple[str | None, str]]:
@@ -68,9 +74,9 @@ def _split_by_headings(text: str) -> list[tuple[str | None, str]]:
 
 
 def _make_chunk_id(text: str, source: str | None, index: int) -> str:
-    """Create a deterministic chunk identifier."""
+    """Create a deterministic, Qdrant-compatible UUID chunk identifier."""
     content = f"{source or ''}:{index}:{text}"
-    return hashlib.sha256(content.encode("utf-8")).hexdigest()[:16]
+    return str(uuid.uuid5(uuid.NAMESPACE_URL, content))
 
 
 def chunk_text(

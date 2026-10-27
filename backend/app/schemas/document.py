@@ -10,6 +10,8 @@ class DocumentStatus(StrEnum):
     PROCESSING = "PROCESSING"
     READY = "READY"
     FAILED = "FAILED"
+    REJECTED = "REJECTED"
+    DUPLICATE = "DUPLICATE"
 
 
 class DocumentSummary(BaseModel):
@@ -29,8 +31,16 @@ class DocumentList(BaseModel):
     documents: list[DocumentSummary]
 
 
+class UploadResultItem(BaseModel):
+    """Per-file result of a document upload request."""
+
+    filename: str
+    status: DocumentStatus
+    document_id: str | None = None
+    error: str | None = None
+
+
 class DocumentUploadResult(BaseModel):
     """Result of a document upload request."""
 
-    accepted: list[str]
-    rejected: list[str]
+    results: list[UploadResultItem]

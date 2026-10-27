@@ -4,6 +4,7 @@ from app.schemas.document import (
     DocumentStatus,
     DocumentSummary,
     DocumentUploadResult,
+    UploadResultItem,
 )
 from app.schemas.facet import Facet, FacetStatus
 from app.schemas.query import (
@@ -28,4 +29,5 @@ __all__ = [
     "FacetStatus",
     "QueryRequest",
     "QueryResponse",
+    "UploadResultItem",
 ]
