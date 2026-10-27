@@ -52,8 +52,10 @@ The loop, in order, is non-negotiable:
    rounds** (`verify-1`, `verify-2`, `verify-3`); a 4th is never started.
    On the limit or a repeat, STOP and post an escalation report; wait for the
    user. A restarted pipeline uses a fresh `.tasks/` directory.
-8. **Close** — only when all verdicts are `PASS`: append closing event, summarize,
-   link the issue and the `.tasks/<dir>/` evidence path.
+8. **Pull Request** — only when all verdicts are `PASS`: `pr-creator` opens a
+   PR from the task branch to `main`, linking the issue and the evidence.
+9. **Close** — only when the PR is created: append closing event, summarize,
+   link the issue, the PR, and the `.tasks/<dir>/` evidence path.
 
 The orchestrator is the only primary agent. Subagents receive pointer-based
 handoffs (pipeline path + iteration + short instruction) and read `brief.md`,

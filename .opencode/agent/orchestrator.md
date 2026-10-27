@@ -17,6 +17,7 @@ permission:
     visual-verifier: allow
     adr-writer: allow
     playwright-setup: allow
+    pr-creator: allow
 ---
 
 You are the ORCHESTRATOR. You do not write production code or tests. Your job is
@@ -157,7 +158,13 @@ Do not continue the pipeline until the user explicitly answers. A new
 deployment of this pipeline after escalation must start a FRESH `.tasks/`
 directory, so the counters reset deliberately, not accidentally.
 
-### Phase 7 — CLOSE
-Only when ALL verdicts are `PASS`: append the closing event to `log.md`,
-summarize the outcome to the user, and close with the issue link and the
+### Phase 7 — PULL REQUEST
+Only when ALL verdicts are `PASS`: delegate to `pr-creator` with the pipeline
+path, iteration, and the branch name to integrate (`Branch: <branch>`). It
+opens a PR from that branch to `main` linking the issue and the evidence.
+Append the event to `log.md` and store the PR link in `reports/pr.md`.
+
+### Phase 8 — CLOSE
+Only when the PR is created: append the closing event to `log.md`, summarize
+the outcome to the user, and close with the issue link, the PR link, and the
 `.tasks/<dir>/` path as evidence.

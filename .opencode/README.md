@@ -94,7 +94,9 @@ so the full history can be reconstructed by reading the files top to bottom.
    - On hitting the limit or a repeat, the orchestrator STOPS and posts an
      escalation report (criterion status, pending findings, diagnosis, options)
      and waits for the user. A restarted pipeline uses a fresh `.tasks/` dir.
-8. Only when all verdicts are `PASS` does it close out.
+8. Only when all verdicts are `PASS` does it open a PR (via `pr-creator`) from
+   the task branch to `main`, linking the issue and the evidence.
+9. Then it closes out.
 
 ## Decision records (ADRs)
 
