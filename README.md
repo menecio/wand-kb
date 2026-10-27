@@ -144,6 +144,11 @@ There is no `confidence_score`; confidence is qualitative only.
 - **Dense retrieval only:** No hybrid search, reranking, or OCR. Queries that need keyword matching or image-based PDFs will fail.
 - **Single-process registry:** The JSON registry is suitable for a single-user prototype; concurrent writers are not supported.
 - **Embedding quality:** Small embedding shifts can cause answerable questions to gate out or irrelevant fragments to pass. Calibration is documented in `eval/CALIBRATION.md`.
+- **Evaluation case_08:** "Are there any conflicts in the documents?" gates out (`INSUFFICIENT_DATA`) because dense retrieval does not match this global/meta question strongly enough to pass the 0.55 threshold.
+- **Evaluation case_03:** "What are the company policies and what products do we sell?" retrieves borderline fragments but the model returns `is_complete=False` because product information is missing from the context.
+- **Evaluation case_11:** "What is the recovery time objective for Acme production systems?" still returns `is_complete=True` despite the presence of contradictory 1-hour and 4-hour documents, because the model cites only the 1-hour sources and the backend conflict detector inspects only cited excerpts.
+- **Post-fix deltas:** The most recent evaluation run also recorded incomplete classifications for case_01 (multiple vacation-policy versions in the KB), case_06 (model number missing from the spec sheet), and case_10 (budget approver not explicitly named). See `eval/CALIBRATION.md` and `eval/RESULTS.md` for full per-case observations.
+- **Conflict-detection scope:** The deterministic backend conflict check (ADR 0016) handles the numeric-contradiction class for the same facet's cited excerpts (e.g., "1 hour" vs "4 hours"). Non-numeric conflicts, semantic equivalences (e.g., "1 hour" vs "60 minutes"), and conflicts excluded from the model's citations remain model-dependent.
 
 ## Running Tests
 
