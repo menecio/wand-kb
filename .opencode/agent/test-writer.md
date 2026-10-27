@@ -19,7 +19,7 @@ permission:
     "**/Pipfile.lock": deny
     ".tasks/**": allow
   bash:
-    "*": ask
+    "*": deny
     "pytest*": allow
     "python -m pytest*": allow
     "uv run pytest*": allow
@@ -33,6 +33,14 @@ permission:
     "docker compose up*": allow
     "docker compose ps*": allow
     "docker compose logs*": allow
+    "ls*": allow
+    "find*": allow
+    "cat*": allow
+    "grep*": allow
+    "head*": allow
+    "tail*": allow
+    "wc*": allow
+    "gh*": deny
     "pip*": deny
     "pip3*": deny
     "python -m pip*": deny

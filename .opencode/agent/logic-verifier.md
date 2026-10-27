@@ -24,6 +24,14 @@ permission:
     "npm run build*": allow
     "npx eslint*": allow
     "npm run lint*": allow
+    "ls*": allow
+    "find*": allow
+    "cat*": allow
+    "grep*": allow
+    "head*": allow
+    "tail*": allow
+    "wc*": allow
+    "gh*": deny
     "git push*main*": deny
     "git push origin main*": deny
     "git checkout main*": deny

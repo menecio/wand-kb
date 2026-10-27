@@ -10,7 +10,7 @@ permission:
     "**/.gitignore": allow
     ".tasks/**": allow
   bash:
-    "*": ask
+    "*": deny
     "npm install*": allow
     "npm i*": allow
     "npm uninstall*": allow
@@ -23,6 +23,14 @@ permission:
     "docker compose logs*": allow
     "git status*": allow
     "git diff*": allow
+    "ls*": allow
+    "find*": allow
+    "cat*": allow
+    "grep*": allow
+    "head*": allow
+    "tail*": allow
+    "wc*": allow
+    "gh*": deny
     "git push*main*": deny
     "git push origin main*": deny
     "git checkout main*": deny

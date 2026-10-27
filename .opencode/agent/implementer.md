@@ -19,7 +19,7 @@ permission:
     "**/Pipfile.lock": deny
     ".tasks/**": allow
   bash:
-    "*": ask
+    "*": deny
     "pytest*": allow
     "python -m pytest*": allow
     "uv run pytest*": allow
@@ -40,6 +40,15 @@ permission:
     "docker compose logs*": allow
     "git status*": allow
     "git diff*": allow
+    "ls*": allow
+    "find*": allow
+    "cat*": allow
+    "grep*": allow
+    "head*": allow
+    "tail*": allow
+    "wc*": allow
+    "tree*": allow
+    "gh*": deny
     "git push*main*": deny
     "git push origin main*": deny
     "git checkout main*": deny

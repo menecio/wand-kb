@@ -14,7 +14,15 @@ permission:
     "docker compose up*": allow
     "docker compose ps*": allow
     "docker compose logs*": allow
-    "docker compose down*": ask
+    "docker compose down*": deny
+    "ls*": allow
+    "find*": allow
+    "cat*": allow
+    "grep*": allow
+    "head*": allow
+    "tail*": allow
+    "wc*": allow
+    "gh*": deny
 ---
 
 You are the visual verifier. You will receive the path of a pipeline under `.tasks/<dir>/`.
