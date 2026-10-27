@@ -25,12 +25,20 @@ permission:
     "npx vitest*": allow
     "npm run test*": allow
     "npm run build*": allow
+    "npx eslint*": allow
     "npx tsc*": allow
     "docker compose up*": allow
     "docker compose ps*": allow
     "docker compose logs*": allow
     "git status*": allow
     "git diff*": allow
+    "git push*main*": deny
+    "git push origin main*": deny
+    "git checkout main*": deny
+    "git switch main*": deny
+    "git merge*main*": deny
+    "git branch -f main*": deny
+    "git reset --hard*main*": deny
 ---
 
 You are the implementer agent. You will receive the path of a pipeline under

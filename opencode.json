@@ -1,0 +1,15 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "default_agent": "orchestrator",
+  "model": "opencode-go/qwen3.7-plus",
+  "agent": {
+    "orchestrator": { "model": "opencode-go/qwen3.7-plus" },
+    "implementer": { "model": "opencode-go/kimi-k2.7-code" },
+    "test-writer": { "model": "opencode-go/kimi-k2.7-code" },
+    "logic-verifier": { "model": "opencode-go/hy3" },
+    "visual-verifier": { "model": "opencode-go/gemini-4-argon" },
+    "issue-creator": { "model": "opencode-go/glm-5.3-flash" },
+    "adr-writer": { "model": "opencode-go/beam-free" },
+    "playwright-setup": { "model": "opencode-go/glm-5.3-flash" }
+  }
+}

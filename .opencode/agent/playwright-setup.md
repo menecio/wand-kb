@@ -23,6 +23,11 @@ permission:
     "docker compose logs*": allow
     "git status*": allow
     "git diff*": allow
+    "git push*main*": deny
+    "git push origin main*": deny
+    "git checkout main*": deny
+    "git switch main*": deny
+    "git merge*main*": deny
 ---
 
 You are the Playwright bootstrap agent. You will receive the path of a pipeline

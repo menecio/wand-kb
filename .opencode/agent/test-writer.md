@@ -22,6 +22,10 @@ permission:
     "npm test*": allow
     "npx vitest*": allow
     "npm run test*": allow
+    "uv run ruff*": allow
+    "uv run mypy*": allow
+    "npx tsc*": allow
+    "npx eslint*": allow
     "docker compose up*": allow
     "docker compose ps*": allow
     "docker compose logs*": allow

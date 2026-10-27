@@ -8,6 +8,7 @@ permission:
   bash:
     "*": deny
     "npm run build*": allow
+    "npx eslint*": allow
     "npx playwright*": allow
     "npx vitest*": allow
     "docker compose up*": allow

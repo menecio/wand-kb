@@ -1,0 +1,45 @@
+#!/bin/sh
+# Block commits directly on main/master.
+branch="$(git symbolic-ref --short HEAD 2>/dev/null)"
+if [ "$branch" = "main" ] || [ "$branch" = "master" ]; then
+  echo "ERROR: committing directly to '$branch' is forbidden. Create a worktree/branch first." >&2
+  exit 1
+fi
+
+# Backend lint + typecheck (only if python files are staged).
+staged_py="$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.py$' || true)"
+if [ -n "$staged_py" ]; then
+  if command -v uv >/dev/null 2>&1; then
+    echo "Running ruff..."
+    uv run --with ruff ruff check $staged_py || exit 1
+    echo "Running mypy..."
+    uv run --with mypy mypy $staged_py || exit 1
+  elif command -v ruff >/dev/null 2>&1; then
+    ruff check $staged_py || exit 1
+  fi
+fi
+
+# Frontend typecheck (only if ts/tsx files are staged and a frontend package exists).
+staged_ts="$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx)$' || true)"
+if [ -n "$staged_ts" ]; then
+  frontend_dir=""
+  for d in . frontend web client app; do
+    if [ -f "$d/package.json" ]; then frontend_dir="$d"; break; fi
+  done
+  if [ -n "$frontend_dir" ]; then
+    if [ -f "$frontend_dir/tsconfig.json" ]; then
+      echo "Running tsc..."
+      (cd "$frontend_dir" && npx tsc --noEmit) || exit 1
+    fi
+    eslint_cfg=""
+    for c in eslint.config.js eslint.config.mjs .eslintrc .eslintrc.js .eslintrc.json; do
+      if [ -f "$frontend_dir/$c" ]; then eslint_cfg="$c"; break; fi
+    done
+    if [ -n "$eslint_cfg" ]; then
+      echo "Running eslint..."
+      (cd "$frontend_dir" && npx eslint $staged_ts) || exit 1
+    fi
+  fi
+fi
+
+exit 0

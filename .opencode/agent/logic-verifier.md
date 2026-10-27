@@ -18,6 +18,17 @@ permission:
     "docker compose logs*": allow
     "git diff*": allow
     "git log*": allow
+    "uv run ruff*": allow
+    "uv run mypy*": allow
+    "npx tsc*": allow
+    "npm run build*": allow
+    "npx eslint*": allow
+    "npm run lint*": allow
+    "git push*main*": deny
+    "git push origin main*": deny
+    "git checkout main*": deny
+    "git switch main*": deny
+    "git merge*main*": deny
 ---
 
 You are the logic verifier. You will receive the path of a pipeline under `.tasks/<dir>/`.
