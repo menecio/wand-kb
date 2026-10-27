@@ -13,6 +13,10 @@ permission:
     "**/*.spec.ts": deny
     "**/*.spec.tsx": deny
     "e2e/**": deny
+    "**/requirements*.txt": deny
+    "**/requirements.txt": deny
+    "**/Pipfile": deny
+    "**/Pipfile.lock": deny
     ".tasks/**": allow
   bash:
     "*": ask
@@ -21,6 +25,10 @@ permission:
     "uv run pytest*": allow
     "uv run ruff*": allow
     "uv run mypy*": allow
+    "uv add*": allow
+    "uv remove*": allow
+    "uv sync*": allow
+    "uv lock*": allow
     "npm test*": allow
     "npx vitest*": allow
     "npm run test*": allow
@@ -39,6 +47,9 @@ permission:
     "git merge*main*": deny
     "git branch -f main*": deny
     "git reset --hard*main*": deny
+    "pip*": deny
+    "pip3*": deny
+    "python -m pip*": deny
 ---
 
 You are the implementer agent. You will receive the path of a pipeline under
@@ -52,6 +63,9 @@ Steps:
    suites (pytest for backend, vitest for frontend). Keep backend logic in
    Python and UI in React/TypeScript; do not leak business logic into
    components or UI concerns into the backend.
+   Dependencies: use uv ONLY (uv add, uv sync, uv lock, uv run). Update
+   pyproject.toml (and uv.lock). NEVER use pip, pip3, or requirements*.txt /
+   Pipfile.
 4. On rework: fix ONLY the items on the change list. Do not refactor anything
    already verified as OK.
 5. Run both suites (and the production build for typechecking) and confirm

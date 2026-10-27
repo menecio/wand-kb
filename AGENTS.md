@@ -93,7 +93,9 @@ the orchestrator decides whether an amendment is needed.
 ## 5. Stack defaults (from `.opencode/README.md`)
 
 - Backend: Python, tests with pytest, lint/typecheck via `uv run ruff` /
-  `uv run mypy`.
+  `uv run mypy`. Dependencies managed with **uv** (`pyproject.toml` + `uv.lock`):
+  use `uv add`, `uv sync`, `uv lock`, `uv run`. Never pip, pip3, or
+  `requirements*.txt` / `Pipfile`.
 - Frontend: TypeScript + React, tests with vitest, typecheck via `npx tsc` /
   `npm run build`.
 - Runtime: everything in Docker Compose (`docker compose up`); tests run on the

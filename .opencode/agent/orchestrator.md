@@ -7,7 +7,6 @@ permission:
     ".tasks/**": allow
   bash:
     "*": deny
-    "gh issue view*": allow
   doom_loop: ask
   task:
     "*": deny

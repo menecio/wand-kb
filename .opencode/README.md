@@ -8,8 +8,11 @@ under `.tasks/`, and handoffs between agents are file pointers, not regenerated 
 The permission globs and allowed commands assume:
 
 - **Backend**: Python, tests with **pytest** (`tests/`, `test_*.py`, `conftest.py`),
-  linting/typechecking with `uv run ruff` / `uv run mypy`. If you use poetry or
-  plain pip, replace the `uv run *` command globs with `poetry run pytest*` etc.
+  linting/typechecking with `uv run ruff` / `uv run mypy`. Dependencies managed
+  with **uv** (`pyproject.toml` + `uv.lock`): use `uv add`, `uv sync`, `uv lock`,
+  `uv run`. Never pip, pip3, or `requirements*.txt` / `Pipfile`. If you use
+  poetry or plain pip, replace the `uv run *` command globs with `poetry run pytest*`
+  etc.
 - **Frontend**: TypeScript + React, tests with **vitest** (`*.test.ts(x)`,
   `*.spec.ts(x)`), typechecking via `npx tsc` / `npm run build`.
 - **Runtime**: everything runs in **Docker Compose** (`docker compose up`),

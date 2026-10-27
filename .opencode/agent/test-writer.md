@@ -13,6 +13,10 @@ permission:
     "**/*.spec.ts": allow
     "**/*.spec.tsx": allow
     "e2e/**": allow
+    "**/requirements*.txt": deny
+    "**/requirements.txt": deny
+    "**/Pipfile": deny
+    "**/Pipfile.lock": deny
     ".tasks/**": allow
   bash:
     "*": ask
@@ -29,6 +33,9 @@ permission:
     "docker compose up*": allow
     "docker compose ps*": allow
     "docker compose logs*": allow
+    "pip*": deny
+    "pip3*": deny
+    "python -m pip*": deny
 ---
 
 You are the test agent. You will receive the path of a pipeline under `.tasks/<dir>/`.
