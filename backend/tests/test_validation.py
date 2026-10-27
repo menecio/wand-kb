@@ -1,5 +1,6 @@
 """Validation tests for Pydantic models and data contract integrity rules."""
 from datetime import datetime
+from typing import Any
 
 import pytest
 from pydantic import ValidationError
@@ -32,9 +33,9 @@ def make_valid_citation() -> Citation:
     )
 
 
-def make_valid_response(**overrides) -> QueryResponse:
+def make_valid_response(**overrides: Any) -> QueryResponse:
     """Return a valid QueryResponse instance with default values."""
-    defaults = {
+    defaults: dict[str, Any] = {
         "response_id": "resp_001",
         "answer": "Paris is the capital of France.",
         "confidence": ConfidenceLevel.HIGH,
