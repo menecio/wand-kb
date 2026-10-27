@@ -1,9 +1,9 @@
 """Smoke tests for external dependencies and configuration.
 
-These tests verify that external services (OpenAI, Qdrant) and the FastAPI
-application can be reached and behave as expected. Tests that require real
-credentials or a running service are skipped when those prerequisites are not
-met; they never simulate successful responses.
+These tests verify that external services (Ollama, Qdrant) and the FastAPI
+application can be reached and behave as expected. Tests that require a running
+service are skipped when those prerequisites are not met; they never simulate
+successful responses.
 """
 
 import contextlib
@@ -11,83 +11,45 @@ import uuid
 
 import pytest
 from fastapi.openapi.utils import get_openapi
-from openai import AsyncOpenAI, OpenAIError
-from pydantic import BaseModel, Field, SecretStr
+from pydantic import BaseModel, Field
 from qdrant_client import QdrantClient
 from qdrant_client.http.exceptions import UnexpectedResponse
 from qdrant_client.models import Distance, VectorParams
 
 from app.config import Settings, settings
 from app.main import app
+from app.services.ollama import OllamaClient, OllamaConnectionError
 
 SMOKE_TEST_COLLECTION = "smoke_test_collection"
 
 
-def _has_openai_key() -> bool:
-    """Return True when a non-empty OpenAI API key is configured."""
-    return settings.openai_api_key is not None and settings.openai_api_key.get_secret_value() != ""
-
-
 # -----------------------------------------------------------------------------
-# Test 1: Configuration Security
+# Test 1: Configuration
 # -----------------------------------------------------------------------------
-def test_config_no_secret_exposure():
-    """Verify API key is not exposed in string representations and is optional."""
+def test_config_ollama_defaults():
+    """Verify Ollama and Qdrant defaults are configured for local services."""
     explicit_settings = Settings()
 
-    # API key must be optional and stored as a secret type.
-    annotation = Settings.model_fields["openai_api_key"].annotation
-    assert annotation == SecretStr | None
-
-    # If a key is configured, it must not appear in repr/str/dict exports.
-    if explicit_settings.openai_api_key:
-        secret_value = explicit_settings.openai_api_key.get_secret_value()
-        assert secret_value not in repr(explicit_settings)
-        assert secret_value not in str(explicit_settings)
-        assert secret_value not in str(explicit_settings.model_dump())
-
-    # An unset key should be falsy and not cause validation failures.
-    unset_settings = Settings(openai_api_key=None)
-    assert unset_settings.openai_api_key is None
+    assert explicit_settings.ollama_base_url == "http://ollama:11434"
+    assert explicit_settings.ollama_embedding_model == "nomic-embed-text"
+    assert explicit_settings.ollama_generation_model == "qwen2.5:3b"
+    assert explicit_settings.qdrant_host == "qdrant"
+    assert explicit_settings.qdrant_port == 6333
+    assert explicit_settings.qdrant_collection_name == "knowledge_base"
+    assert explicit_settings.embedding_dimensions == 768
 
 
 def test_config_env_file_can_load(tmp_path):
     """Verify a .env file can be loaded when present."""
     env_file = tmp_path / ".env"
-    env_file.write_text("OPENAI_API_KEY=sk-test-key-from-env-file\n")
+    env_file.write_text("OLLAMA_BASE_URL=http://custom-ollama:11434\n")
 
     loaded = Settings(_env_file=str(env_file))
-    assert loaded.openai_api_key is not None
-    assert loaded.openai_api_key.get_secret_value() == "sk-test-key-from-env-file"
-
-    # Confirm the loaded key does not leak through repr.
-    assert loaded.openai_api_key.get_secret_value() not in repr(loaded)
+    assert loaded.ollama_base_url == "http://custom-ollama:11434"
 
 
 # -----------------------------------------------------------------------------
-# Test 2: Embedding Generation
-# -----------------------------------------------------------------------------
-@pytest.mark.skipif(not _has_openai_key(), reason="OPENAI_API_KEY not configured")
-def test_embedding_generation():
-    """Test embedding generation via the configured OpenAI model."""
-    client = AsyncOpenAI(api_key=settings.openai_api_key.get_secret_value())
-
-    try:
-        response = client.embeddings.create(
-            model=settings.embedding_model,
-            input="test",
-        )
-        embedding = response.data[0].embedding
-    except OpenAIError as exc:
-        pytest.fail(f"OpenAI embedding request failed: {exc}")
-
-    assert isinstance(embedding, list)
-    assert len(embedding) == settings.embedding_dimensions
-    assert all(isinstance(value, float) for value in embedding)
-
-
-# -----------------------------------------------------------------------------
-# Test 3: Generative Model Structured Output
+# Test 2: Ollama connectivity
 # -----------------------------------------------------------------------------
 class SmokeStructuredOutput(BaseModel):
     """Minimal schema for the generative smoke test."""
@@ -95,32 +57,48 @@ class SmokeStructuredOutput(BaseModel):
     test: str = Field(...)
 
 
-@pytest.mark.skipif(not _has_openai_key(), reason="OPENAI_API_KEY not configured")
-def test_generative_model_structured_output():
-    """Test structured output generation via the configured OpenAI model."""
-    client = AsyncOpenAI(api_key=settings.openai_api_key.get_secret_value())
-
+def _ollama_available() -> bool:
+    """Return True when the local Ollama service is reachable."""
+    client = OllamaClient(base_url=settings.ollama_base_url)
     try:
-        completion = client.beta.chat.completions.parse(
-            model=settings.generation_model,
-            messages=[
-                {
-                    "role": "user",
-                    "content": "Return a JSON object with key 'test' and value 'passed'",
-                }
-            ],
-            response_format=SmokeStructuredOutput,
-        )
-        parsed = completion.choices[0].message.parsed
-    except OpenAIError as exc:
-        pytest.fail(f"OpenAI structured output request failed: {exc}")
+        client.generate_embedding(model=settings.ollama_embedding_model, text="ping")
+        return True
+    except OllamaConnectionError:
+        return False
+
+
+@pytest.mark.skipif(not _ollama_available(), reason="Ollama service not reachable")
+def test_ollama_embedding_generation():
+    """Test embedding generation via the configured local Ollama model."""
+    client = OllamaClient(base_url=settings.ollama_base_url)
+
+    embedding = client.generate_embedding(
+        model=settings.ollama_embedding_model,
+        text="test",
+    )
+
+    assert isinstance(embedding, list)
+    assert len(embedding) == settings.embedding_dimensions
+    assert all(isinstance(value, float) for value in embedding)
+
+
+@pytest.mark.skipif(not _ollama_available(), reason="Ollama service not reachable")
+def test_ollama_structured_output():
+    """Test structured output generation via the configured local Ollama model."""
+    client = OllamaClient(base_url=settings.ollama_base_url)
+
+    parsed = client.generate_structured(
+        model=settings.ollama_generation_model,
+        prompt="Return a JSON object with key 'test' and value 'passed'",
+        schema=SmokeStructuredOutput,
+    )
 
     assert isinstance(parsed, SmokeStructuredOutput)
     assert parsed.test == "passed"
 
 
 # -----------------------------------------------------------------------------
-# Test 4: Qdrant Collection Operations
+# Test 3: Qdrant Collection Operations
 # -----------------------------------------------------------------------------
 def _qdrant_client() -> QdrantClient:
     """Return a Qdrant client configured from application settings."""
@@ -163,7 +141,7 @@ def test_qdrant_collection_operations():
 
 
 # -----------------------------------------------------------------------------
-# Test 5: FastAPI OpenAPI Generation
+# Test 4: FastAPI OpenAPI Generation
 # -----------------------------------------------------------------------------
 def test_fastapi_openapi_generation():
     """Verify the FastAPI app can generate a complete OpenAPI schema."""
