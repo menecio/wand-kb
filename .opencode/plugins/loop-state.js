@@ -17,10 +17,29 @@ function latestTaskDir(directory) {
   return path.join(tasksDir, dirs[dirs.length - 1])
 }
 
+function allVerdictsPass(taskDir) {
+  if (!taskDir) return false
+  const reportsDir = path.join(taskDir, "reports")
+  if (!fs.existsSync(reportsDir)) return false
+  const files = fs.readdirSync(reportsDir)
+  const logicReports = files.filter((f) => /^verify-.*-logic\.md$/.test(f))
+  if (logicReports.length === 0) return false
+  for (const f of logicReports) {
+    const content = fs.readFileSync(path.join(reportsDir, f), "utf8")
+    if (!/VERDICT:\s*PASS/i.test(content)) return false
+  }
+  const visualReports = files.filter((f) => /^verify-.*-visual\.md$/.test(f))
+  for (const f of visualReports) {
+    const content = fs.readFileSync(path.join(reportsDir, f), "utf8")
+    if (!/VERDICT:\s*PASS/i.test(content)) return false
+  }
+  return true
+}
+
 function readState(directory) {
   const taskDir = latestTaskDir(directory)
   if (!taskDir) {
-    return { taskDir: null, briefExists: false, briefConfirmed: false, hasTests: false, hasImpl: false }
+    return { taskDir: null, briefExists: false, briefConfirmed: false, hasTests: false, hasImpl: false, allVerdictsPass: false }
   }
   const briefPath = path.join(taskDir, "brief.md")
   const logPath = path.join(taskDir, "log.md")
@@ -46,6 +65,7 @@ function readState(directory) {
     briefConfirmed,
     hasTests,
     hasImpl,
+    allVerdictsPass: allVerdictsPass(taskDir),
   }
 }
 
@@ -113,6 +133,9 @@ export const LoopStateMachine = async ({ directory }) => {
         }
         if (subagent === "visual-verifier" && !state.hasImpl) {
           throw new Error("LOOP-STATE: implementation must exist before visual-verifier (Phase 4)")
+        }
+        if (subagent === "pr-creator" && !state.allVerdictsPass) {
+          throw new Error("LOOP-STATE: all verification verdicts must be PASS before pr-creator (Phase 7)")
         }
         if (subagent === "playwright-setup" && !state.briefExists) {
           throw new Error("LOOP-STATE: brief must exist before playwright-setup (Phase 1)")
