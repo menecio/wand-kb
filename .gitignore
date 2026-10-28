@@ -317,3 +317,8 @@ data/
 # Project-specific
 .env.local
 .env.*.local
+
+# Playwright
+frontend/test-results/
+frontend/playwright-report/
+frontend/blob-report/
