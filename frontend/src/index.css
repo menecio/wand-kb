@@ -367,6 +367,7 @@ input[type='file'] {
 
 .cell-error {
   color: var(--state-danger);
+  overflow-wrap: anywhere;
 }
 
 /* ---------- Notice (§8) ---------- */
@@ -708,6 +709,7 @@ input[type='file'] {
   .documents-table td {
     padding: 0 0 var(--space-6);
     border-bottom: none;
+    overflow-wrap: anywhere;
   }
 
   .documents-table td:empty {
