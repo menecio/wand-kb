@@ -34,3 +34,9 @@
 - False-acceptance and false-rejection reviewed; threshold left at 0.55.
 - Feature set FROZEN. Evidence: reports/evaluation-report.md, RESULTS-phase6-live.md,
   RESULTS-phase3-archived.md.
+
+## [2026-10-28T03:25] orchestrator — Close: PR created
+- PR: https://github.com/menecio/wand-take-home/pull/7 (chore/phase6-evaluation → main)
+- All verdicts PASS (unit 118, lint/typecheck, vitest 16, e2e 4, live eval 14/14,
+  persistence verified). Feature set frozen.
+- Deliverable blocker noted: none. Pending user decision: async-blocking-calls task.
