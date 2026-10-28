@@ -1,3 +1,4 @@
+import logging
 import os
 from pathlib import Path
 
@@ -7,6 +8,17 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api import documents, health, query
+
+# Issue #12 / ADR 0020: make app INFO logs (retrieval_gating decisions,
+# document processing) visible in container logs. The unconditional setLevel
+# keeps this idempotent when a test runner already attached handlers to the
+# root logger; the handler is only added when none exists (plain uvicorn).
+_root_logger = logging.getLogger()
+_root_logger.setLevel(logging.INFO)
+if not _root_logger.handlers:
+    _handler = logging.StreamHandler()
+    _handler.setFormatter(logging.Formatter("%(levelname)s %(name)s %(message)s"))
+    _root_logger.addHandler(_handler)
 
 app = FastAPI(
     title="Knowledge Base Search & Enrichment",

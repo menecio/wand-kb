@@ -403,15 +403,29 @@ def _generate_with_retry(question: str, context_chunks: list[dict]) -> _Generati
     ) from last_error
 
 
-def _insufficient_data_response() -> QueryResponse:
-    """Return the controlled INSUFFICIENT_DATA response."""
+def _insufficient_data_response(
+    best_score: float | None = None,
+    threshold: float | None = None,
+) -> QueryResponse:
+    """Return the controlled INSUFFICIENT_DATA response.
+
+    When retrieval ran and returned scored fragments below the gate, the best
+    score and the active threshold are disclosed in missing_info so the
+    near-miss is visible to callers (issue #12 / ADR 0020).
+    """
+    missing_info = ["No relevant evidence was retrieved from the knowledge base."]
+    if best_score is not None and threshold is not None:
+        missing_info.append(
+            f"Best retrieved relevance score {best_score:.2f} was below the "
+            f"{threshold:.2f} threshold."
+        )
     return QueryResponse(
         response_id=str(uuid.uuid4()),
         answer="Sufficient evidence was not retrieved to answer this question. "
         "Try uploading relevant documents or rephrasing the query.",
         confidence=ConfidenceLevel.INSUFFICIENT_DATA,
         is_complete=False,
-        missing_info=["No relevant evidence was retrieved from the knowledge base."],
+        missing_info=missing_info,
         enrichment_suggestions=[
             EnrichmentSuggestion(
                 action_type=ActionType.UPLOAD_DOCUMENT,
@@ -508,7 +522,14 @@ async def generate_answer(question: str, context_chunks: list[dict]) -> QueryRes
 
     if not passing_chunks:
         _log_retrieval_decision(question, context_chunks, generation_invoked=False)
-        return _insufficient_data_response()
+        best_score = max(
+            (float(chunk.get("score", 0.0)) for chunk in context_chunks),
+            default=None,
+        )
+        return _insufficient_data_response(
+            best_score=best_score,
+            threshold=settings.retrieval_threshold,
+        )
 
     # Deduplicate and apply token budget.
     deduped = deduplicate_chunks(passing_chunks)
