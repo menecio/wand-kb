@@ -19,3 +19,7 @@
 ## [2026-10-28T10:34] implementer — completed iteration 1: model_validator(mode=before) coercion in _GenerationSchema (confidence aliases, facet status -> UNCERTAIN, action_type -> ASK_USER); suite 152 passed / 3 skipped, ruff+mypy clean; committed
 
 ## [2026-10-28T10:40] orchestrator — verify-1 PASS (logic-verifier: backend 152 passed, frontend 24 passed + tsc/eslint, ruff+mypy clean, all 6 criteria met; no UI changes)
+
+## [2026-10-28T10:43] pr-creator — PR #17 opened: https://github.com/menecio/wand-kb/pull/17 (fix/model-output-enum-coercion → main, closes #15)
+
+## [2026-10-28T10:44] orchestrator — pipeline closed (issue #15, PR #17, evidence .tasks/2026-10-28-model-output-enum-coercion/)
