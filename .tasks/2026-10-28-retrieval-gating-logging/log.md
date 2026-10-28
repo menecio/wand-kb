@@ -13,3 +13,7 @@
 ## [2026-10-28T10:06] test-writer — completed phase 3: 8 tests added (6 fail-first TDD, 2 regression guards), suite 6 failed / 124 passed pre-implementation, ruff+mypy clean; tests committed
 
 ## [2026-10-28T10:07] orchestrator — pausing before implementer phase per user instruction ("ask for confirmation before changing to the implementer role")
+
+## [2026-10-28T10:08] orchestrator — user confirmed ("continue"); implementer delegated (phase 4, iteration 1)
+
+## [2026-10-28T10:14] implementer — completed iteration 1: threshold 0.50, near-miss disclosure, root-logger INFO config, processing log, CALIBRATION.md append; unit suite 130 passed / 3 skipped, ruff+mypy clean; committed
