@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from app.schemas.query import Citation, QueryResponse
+from app.schemas.query import Citation, ConfidenceLevel, QueryResponse
 from app.services.query_pipeline import (
     generate_answer,
     generate_query_embedding,
@@ -171,6 +171,29 @@ async def test_citations_only_reference_context_chunks(sample_chunks: list[dict]
     context_ids = {chunk["id"] for chunk in sample_chunks}
     for citation in response.citations:
         assert citation.chunk_id in context_ids
+
+
+@pytest.mark.asyncio
+async def test_generate_answer_rejects_blank_model_answer(sample_chunks: list[dict]) -> None:
+    """A blank model answer is invalid output: retried once, then a controlled error."""
+    fake_response = MagicMock()
+    fake_response.answer = "   "
+    fake_response.confidence = "HIGH"
+    fake_response.missing_info = []
+    fake_response.citations = []
+
+    with patch("app.services.query_pipeline.ollama_client") as mock_ollama:
+        mock_ollama.generate_structured.return_value = fake_response
+        response = await generate_answer(
+            question="What is the RTO?",
+            context_chunks=sample_chunks,
+        )
+
+    assert isinstance(response, QueryResponse)
+    assert response.answer.strip()
+    assert response.confidence == ConfidenceLevel.INSUFFICIENT_DATA
+    assert response.citations == []
+    assert response.is_complete is False
 
 
 @pytest.mark.asyncio
