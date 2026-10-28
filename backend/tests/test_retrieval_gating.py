@@ -105,6 +105,123 @@ def test_no_fragment_passes_threshold_generation_not_invoked() -> None:
     assert not mock_ollama.generate_structured.called
 
 
+# ---
+# Issue #12 / ADR 0020 (Proposed): recalibrate the gate from 0.55 to 0.50 and
+# disclose near-miss scores. See brief.md in .tasks/2026-10-28-retrieval-gating-logging/.
+# ---
+
+
+def test_default_retrieval_threshold_is_0_50(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Issue #12: default gate recalibrated from 0.55 to 0.50 (ADR 0020)."""
+    monkeypatch.delenv("RETRIEVAL_THRESHOLD", raising=False)
+    s = Settings()
+    assert pytest.approx(s.retrieval_threshold) == 0.50
+
+
+def _rto_chunk(score: float) -> dict:
+    """Build a retrieved chunk carrying the RTO fact at the given score."""
+    return {
+        "id": "chunk-1",
+        "score": score,
+        "metadata": {
+            "document_id": "doc-1",
+            "source": "dr.md",
+            "section": "Disaster Recovery",
+            "chunk_index": 0,
+            "text": "The recovery time objective is 1 hour.",
+        },
+    }
+
+
+def _generation_success() -> MagicMock:
+    """A generation-client response that validates against the RTO context chunk."""
+    return MagicMock(
+        response_id="resp-1",
+        answer="1 hour",
+        confidence="HIGH",
+        is_complete=True,
+        missing_info=[],
+        citations=[{"chunk_id": "chunk-1"}],
+        enrichment_suggestions=[],
+        facets=[
+            {
+                "description": "What is the recovery time objective?",
+                "status": "ANSWERED",
+                "citation_ids": ["chunk-1"],
+                "associated_gap": None,
+            }
+        ],
+    )
+
+
+def test_borderline_score_0_52_passes_gate_and_invokes_generation() -> None:
+    """Issue #12: a 0.52 chunk (gated out at 0.55) must reach generation at 0.50."""
+    with (
+        patch("app.services.query_pipeline.qdrant_client") as mock_qdrant,
+        patch("app.services.query_pipeline.ollama_client") as mock_ollama,
+    ):
+        mock_qdrant.search.return_value = [_rto_chunk(0.52)]
+        mock_ollama.generate_embedding.return_value = [0.2] * settings.embedding_dimensions
+        mock_ollama.generate_structured.return_value = _generation_success()
+
+        response = client.post(
+            "/api/query", json={"question": "What is the recovery time objective?"}
+        )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["confidence"] == "HIGH"
+    assert data["answer"] == "1 hour"
+    assert data["citations"], "generation must be invoked with the borderline chunk"
+    assert mock_ollama.generate_structured.called
+
+
+def test_irrelevant_band_score_0_46_still_gates_out_generation() -> None:
+    """Issue #12: the irrelevant band (case_04 scores 0.44-0.46) stays below the 0.50 gate."""
+    with (
+        patch("app.services.query_pipeline.qdrant_client") as mock_qdrant,
+        patch("app.services.query_pipeline.ollama_client") as mock_ollama,
+    ):
+        mock_qdrant.search.return_value = [_rto_chunk(0.46)]
+        mock_ollama.generate_embedding.return_value = [0.2] * settings.embedding_dimensions
+
+        response = client.post(
+            "/api/query", json={"question": "What is the recovery time objective?"}
+        )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["confidence"] == "INSUFFICIENT_DATA"
+    assert data["is_complete"] is False
+    assert data["citations"] == []
+    assert not mock_ollama.generate_structured.called
+
+
+def test_gated_response_discloses_near_miss_score_and_threshold() -> None:
+    """Issue #12: gated responses disclose the best score and the active threshold."""
+    with (
+        patch("app.services.query_pipeline.qdrant_client") as mock_qdrant,
+        patch("app.services.query_pipeline.ollama_client") as mock_ollama,
+    ):
+        mock_qdrant.search.return_value = [_rto_chunk(0.47)]
+        mock_ollama.generate_embedding.return_value = [0.2] * settings.embedding_dimensions
+
+        response = client.post(
+            "/api/query", json={"question": "What is the recovery time objective?"}
+        )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["confidence"] == "INSUFFICIENT_DATA"
+    assert data["is_complete"] is False
+    assert data["citations"] == []
+    near_miss = [m for m in data["missing_info"] if "0.47" in m]
+    assert near_miss, f"expected near-miss disclosure in missing_info, got: {data['missing_info']}"
+    assert any("0.5" in m for m in near_miss), (
+        "the near-miss line must also state the active threshold"
+    )
+
+
 def test_gated_response_shape() -> None:
     """AC-24: Gated-out response is INSUFFICIENT_DATA with no factual claims."""
     with (
