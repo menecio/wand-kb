@@ -322,3 +322,7 @@ data/
 frontend/test-results/
 frontend/playwright-report/
 frontend/blob-report/
+
+# Frontend API client lives under src/lib; the Python template "lib/" rule is too broad.
+!frontend/src/lib/
+!frontend/src/lib/**
