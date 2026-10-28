@@ -1,4 +1,4 @@
-# 0020. Hard delete of a document across all stores
+# 0022. Hard delete of a document across all stores
 
 - Status: Proposed
 - Date: 2026-10-28

@@ -9,7 +9,7 @@ Backend:
   `document_id`; wraps failures in `QdrantConnectionError`.
 - `app/api/documents.py`: new `DELETE /api/documents/{document_id}` — 404
   (detail names the document) for unknown ids; Qdrant deletion FIRST so a
-  vector-store failure (→ 503) leaves file + registry intact (ADR-0020,
+  vector-store failure (→ 503) leaves file + registry intact (ADR-0022,
   no partial state); then removes `upload_dir/<document_id>` (tolerates a
   missing dir, e.g. registry-only rows); then registry entry; returns
   `DocumentDeleteResponse {document_id, deleted: true}`.

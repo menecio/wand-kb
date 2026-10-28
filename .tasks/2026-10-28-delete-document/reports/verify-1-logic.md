@@ -44,5 +44,5 @@ fails 4 pre-existing upload tests. Recommend a follow-up issue for test
 isolation.
 
 Architectural check: no forbidden patterns introduced; flat router/service
-functions; direct calls only. ADR-0020 followed (hard delete, qdrant-first
+functions; direct calls only. ADR-0022 followed (hard delete, qdrant-first
 ordering). Verdict: PASS pending visual verification of UI criteria.

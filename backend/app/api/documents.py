@@ -222,7 +222,7 @@ def delete_document(document_id: str) -> DocumentDeleteResponse:
     """Hard-delete a document from the filesystem, registry and vector store.
 
     Qdrant is cleared first: if the vector store is unreachable the request
-    fails and the document stays intact everywhere (ADR-0020, no partial
+    fails and the document stays intact everywhere (ADR-0022, no partial
     state). Filesystem and registry cleanup follow only after that succeeded.
     """
     documents = _get_documents()
