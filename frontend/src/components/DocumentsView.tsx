@@ -1,20 +1,48 @@
 import { useState } from 'react';
 import { uploadDocuments } from '../lib/api';
-import type { DocumentStatus, DocumentSummary } from '../types';
+import type { DocumentStatus, DocumentSummary, UploadResultItem } from '../types';
+import Button from './ui/Button';
+import Spinner from './Spinner';
 import StatusBadge from './StatusBadge';
-
-interface Row {
-  document_id: string;
-  document_name: string;
-  status: DocumentStatus;
-  error: string | null;
-}
 
 interface DocumentsViewProps {
   documents: DocumentSummary[];
   status: 'loading' | 'ready' | 'error';
   onRefresh: () => void;
-  onUploaded: (rows: Row[]) => void;
+  onUploaded: (results: UploadResultItem[]) => void;
+}
+
+/**
+ * Summarize per-file ingestion outcomes from the real contract (§4, §8):
+ * ready, processing, failed, already-uploaded (idempotent duplicates), and
+ * rejected files. Never claims a new document for a duplicate.
+ */
+function summarizeUpload(results: UploadResultItem[]): string {
+  const parts: string[] = [];
+  const byStatus = (status: DocumentStatus) =>
+    results.filter((item) => item.status === status);
+  const ready = byStatus('READY');
+  const processing = byStatus('PROCESSING');
+  const failed = byStatus('FAILED');
+  const duplicate = byStatus('DUPLICATE');
+  const rejected = byStatus('REJECTED');
+  const names = (items: UploadResultItem[]) =>
+    items.map((item) => item.filename).join(', ');
+  const files = (count: number) => (count === 1 ? 'file' : 'files');
+
+  if (ready.length > 0) parts.push(`${ready.length} ${files(ready.length)} ready.`);
+  if (processing.length > 0)
+    parts.push(`${processing.length} ${files(processing.length)} processing.`);
+  if (failed.length > 0)
+    parts.push(`${failed.length} ${files(failed.length)} failed: ${names(failed)}.`);
+  if (duplicate.length > 0)
+    parts.push(
+      `${duplicate.length} already uploaded: ${names(duplicate)} — no new document was created.`,
+    );
+  if (rejected.length > 0)
+    parts.push(`${rejected.length} ${files(rejected.length)} rejected: ${names(rejected)}.`);
+
+  return parts.join(' ');
 }
 
 export default function DocumentsView({
@@ -32,17 +60,10 @@ export default function DocumentsView({
     setNotice(null);
     try {
       const result = await uploadDocuments(files);
-      onUploaded(
-        result.results.map((item) => ({
-          document_id: item.document_id ?? `upload-${item.filename}`,
-          document_name: item.filename,
-          status: item.status,
-          error: item.error,
-        })),
-      );
-      setNotice('Upload complete.');
+      onUploaded(result.results);
+      setNotice(summarizeUpload(result.results));
     } catch {
-      setNotice('The upload could not be completed.');
+      setNotice('The upload could not be completed. Try again.');
     } finally {
       setUploading(false);
     }
@@ -54,6 +75,7 @@ export default function DocumentsView({
       <p>Upload files and manage the sources available for search.</p>
 
       <form
+        className="panel upload-form"
         onSubmit={(event) => {
           event.preventDefault();
           const input = event.currentTarget.elements.namedItem(
@@ -70,35 +92,46 @@ export default function DocumentsView({
           multiple
           accept=".pdf,.md,.txt"
         />
-        <button type="submit" disabled={uploading}>
-          {uploading ? 'Uploading…' : 'Upload documents'}
-        </button>
+        <Button type="submit" disabled={uploading}>
+          {uploading ? (
+            <>
+              <Spinner /> Uploading…
+            </>
+          ) : (
+            'Upload documents'
+          )}
+        </Button>
       </form>
 
       {notice && (
-        <div role="status">
-          <span>{notice}</span>
-          <button
-            type="button"
-            onClick={() => setNotice(null)}
+        <div role="status" className="notice">
+          <p>{notice}</p>
+          <Button
+            variant="ghost"
+            size="sm"
             aria-label="Dismiss notice"
+            onClick={() => setNotice(null)}
           >
             Dismiss
-          </button>
+          </Button>
         </div>
       )}
 
       {status === 'error' ? (
-        <div>
+        <div role="alert" className="error-state panel">
           <p>Could not load documents.</p>
-          <button type="button" onClick={onRefresh}>
+          <Button variant="outline" onClick={onRefresh}>
             Retry
-          </button>
+          </Button>
         </div>
+      ) : status === 'loading' ? (
+        <p role="status" className="state">
+          <Spinner /> Loading documents…
+        </p>
       ) : documents.length === 0 ? (
-        <p>No sources yet.</p>
+        <p className="state">No sources yet. Upload a document to make it searchable.</p>
       ) : (
-        <table>
+        <table className="documents-table">
           <thead>
             <tr>
               <th>Document</th>
@@ -109,11 +142,11 @@ export default function DocumentsView({
           <tbody>
             {documents.map((document) => (
               <tr key={document.document_id}>
-                <td>{document.document_name}</td>
+                <td className="cell-name">{document.document_name}</td>
                 <td>
                   <StatusBadge status={document.status} />
                 </td>
-                <td>{document.error ?? ''}</td>
+                <td className="cell-error">{document.error ?? ''}</td>
               </tr>
             ))}
           </tbody>

@@ -1,7 +1,732 @@
+/* Design tokens — Phase 5 brief §15 (dark theme only, OKLCH, no light theme). */
 :root {
-  font-family: system-ui, -apple-system, sans-serif;
+  color-scheme: dark;
+
+  --surface-page: oklch(0.16 0.025 265);
+  --surface-panel: oklch(0.2 0.03 260);
+  --surface-raised: oklch(0.24 0.035 258);
+  --stroke-default: oklch(0.29 0.045 258);
+  --text-primary: oklch(0.95 0.01 240);
+  --text-secondary: oklch(0.7 0.025 255);
+  --state-active: oklch(0.85 0.14 220);
+  --state-success: oklch(0.77 0.15 155);
+  --state-warning: oklch(0.83 0.16 80);
+  --state-danger: oklch(0.7 0.17 25);
+
+  --font-sans: 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  /* Spacing scale: 4, 6, 8, 10, 12, 16, 20, 24, 28, 36, 48 px. */
+  --space-4: 4px;
+  --space-6: 6px;
+  --space-8: 8px;
+  --space-10: 10px;
+  --space-12: 12px;
+  --space-16: 16px;
+  --space-20: 20px;
+  --space-24: 24px;
+  --space-28: 28px;
+  --space-36: 36px;
+  --space-48: 48px;
+
+  --topbar-height: 68px;
+  --content-max-width: 1180px;
+  --control-min-height: 42px;
+  --radius-action: 3px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: dark;
 }
 
 body {
   margin: 0;
+  min-width: 320px;
+  background: var(--surface-page);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+h1 {
+  margin: 0 0 var(--space-8);
+  font-size: clamp(25px, 2.4vw, 34px);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+h2 {
+  margin: 0 0 var(--space-12);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+h3 {
+  margin: var(--space-4) 0;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+p {
+  margin: 0 0 var(--space-12);
+}
+
+a {
+  color: var(--state-active);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Visible focus per tokens: 2px outline, 3px offset, state-active color. */
+:focus-visible {
+  outline: 2px solid var(--state-active);
+  outline-offset: 3px;
+}
+
+/* ---------- App shell (§7, §16) ---------- */
+
+.shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  min-height: var(--topbar-height);
+  display: flex;
+  align-items: center;
+  gap: var(--space-24);
+  padding: 0 clamp(20px, 4vw, 56px);
+  border-bottom: 1px solid var(--stroke-default);
+  background: var(--surface-page);
+}
+
+.brand {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.brand:hover {
+  text-decoration: none;
+  color: var(--state-active);
+}
+
+.topbar-nav {
+  display: flex;
+  gap: var(--space-4);
+  margin-left: auto;
+}
+
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--space-12);
+  border-radius: var(--radius-action);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.nav-link:hover {
+  color: var(--text-primary);
+  background: var(--surface-raised);
+  text-decoration: none;
+}
+
+.nav-link[aria-current='page'] {
+  color: var(--state-active);
+}
+
+.content {
+  flex: 1;
+  width: 100%;
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  padding: var(--space-36) clamp(20px, 4vw, 56px);
+}
+
+/* ---------- Panels (1px border, no shadow, no gradients) ---------- */
+
+.panel {
+  background: var(--surface-panel);
+  border: 1px solid var(--stroke-default);
+  border-radius: var(--radius-action);
+  padding: var(--space-20);
+}
+
+/* ---------- Controls (§10, §15, §17) ---------- */
+
+label {
+  display: block;
+  margin-bottom: var(--space-6);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-8);
+  min-height: var(--control-min-height);
+  padding: 0 var(--space-16);
+  border: 1px solid transparent;
+  border-radius: var(--radius-action);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.button--default {
+  background: var(--state-active);
+  color: var(--surface-page);
+}
+
+.button--default:hover:not(:disabled) {
+  background: color-mix(in oklch, var(--state-active) 88%, white);
+}
+
+.button--outline {
+  background: transparent;
+  color: var(--text-primary);
+  border-color: var(--stroke-default);
+}
+
+.button--outline:hover:not(:disabled) {
+  background: var(--surface-raised);
+}
+
+.button--ghost {
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.button--ghost:hover:not(:disabled) {
+  color: var(--text-primary);
+  background: var(--surface-raised);
+}
+
+.button--sm {
+  min-height: 36px;
+  padding: 0 var(--space-12);
+  font-size: 13px;
+}
+
+.textarea {
+  width: 100%;
+  min-height: 96px;
+  padding: var(--space-10) var(--space-12);
+  background: var(--surface-panel);
+  border: 1px solid var(--stroke-default);
+  border-radius: var(--radius-action);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.textarea::placeholder {
+  color: var(--text-secondary);
+}
+
+.textarea:disabled {
+  opacity: 0.7;
+}
+
+input[type='file'] {
+  display: block;
+  width: 100%;
+  min-height: var(--control-min-height);
+  margin-bottom: var(--space-12);
+  padding: var(--space-6) 0;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 13px;
+}
+
+/* ---------- Spinner and motion (§16) ---------- */
+
+.spinner {
+  flex: none;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------- Status badges (§8, §17) ---------- */
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-6);
+  padding: var(--space-4) var(--space-10);
+  border: 1px solid var(--stroke-default);
+  border-radius: var(--radius-action);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.status-badge svg {
+  flex: none;
+}
+
+.status-badge--ready {
+  color: var(--state-success);
+  border-color: color-mix(in oklch, var(--state-success) 45%, var(--stroke-default));
+}
+
+.status-badge--processing {
+  color: var(--state-warning);
+  border-color: color-mix(in oklch, var(--state-warning) 45%, var(--stroke-default));
+}
+
+.status-badge--failed,
+.status-badge--rejected {
+  color: var(--state-danger);
+  border-color: color-mix(in oklch, var(--state-danger) 45%, var(--stroke-default));
+}
+
+/* ---------- Documents table (§8, §14) ---------- */
+
+.documents-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface-panel);
+  border: 1px solid var(--stroke-default);
+  border-radius: var(--radius-action);
+}
+
+.documents-table th {
+  padding: var(--space-12) var(--space-16);
+  border-bottom: 1px solid var(--stroke-default);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: left;
+}
+
+.documents-table td {
+  padding: var(--space-12) var(--space-16);
+  border-bottom: 1px solid var(--stroke-default);
+  vertical-align: top;
+}
+
+.documents-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.documents-table tbody tr:hover {
+  background: var(--surface-raised);
+}
+
+.cell-name {
+  max-width: 360px;
+  overflow-wrap: anywhere;
+}
+
+.cell-error {
+  color: var(--state-danger);
+}
+
+/* ---------- Notice (§8) ---------- */
+
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-12);
+  margin-top: var(--space-16);
+  padding: var(--space-12) var(--space-16);
+  background: var(--surface-panel);
+  border: 1px solid var(--stroke-default);
+  border-radius: var(--radius-action);
+}
+
+.notice p {
+  margin: 0;
+  flex: 1;
+  color: var(--text-secondary);
+}
+
+.notice .button {
+  flex: none;
+}
+
+/* ---------- Shared states (§13) ---------- */
+
+.state {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  margin-top: var(--space-16);
+  padding: var(--space-24);
+  border: 1px dashed var(--stroke-default);
+  border-radius: var(--radius-action);
+  color: var(--text-secondary);
+}
+
+.state svg {
+  flex: none;
+}
+
+.state p {
+  margin: 0;
+}
+
+.error-state {
+  margin-top: var(--space-16);
+}
+
+.error-state p {
+  color: var(--state-danger);
+  margin: 0 0 var(--space-8);
+}
+
+/* ---------- Result composition (§12, §14, §16) ---------- */
+
+.answer-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-12);
+  padding: var(--space-12) var(--space-20);
+  background: var(--surface-panel);
+  border: 1px solid var(--stroke-default);
+  border-radius: var(--radius-action);
+}
+
+.answer-header .meta {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.completeness--complete {
+  color: var(--state-success);
+}
+
+.completeness--incomplete {
+  color: var(--state-warning);
+}
+
+.confidence {
+  color: var(--text-secondary);
+}
+
+/* Two-column answer + evidence above 900px; one column at/below it. */
+.result-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-24);
+  margin-top: var(--space-16);
+}
+
+.result-main {
+  min-width: 0;
+}
+
+.answer-text {
+  font-size: 15px;
+  line-height: 1.8;
+}
+
+.missing-info {
+  margin: var(--space-16) 0 0;
+  border-color: color-mix(in oklch, var(--state-warning) 45%, var(--stroke-default));
+}
+
+.missing-info h2 {
+  color: var(--state-warning);
+}
+
+.missing-info ul {
+  margin: 0;
+  padding-left: var(--space-20);
+}
+
+.suggestions {
+  margin-top: var(--space-16);
+}
+
+.suggestion {
+  padding: var(--space-12) 0;
+  border-bottom: 1px solid var(--stroke-default);
+}
+
+.suggestion:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.suggestion strong {
+  color: var(--state-active);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.suggestion p {
+  margin: 0;
+}
+
+.suggestions-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.result-actions {
+  margin-top: var(--space-16);
+}
+
+/* ---------- Evidence / citations (§12, §16) ---------- */
+
+.evidence {
+  min-width: 0;
+}
+
+.evidence-heading {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-8);
+  margin-bottom: var(--space-12);
+}
+
+.evidence-heading h2 {
+  margin: 0;
+}
+
+.evidence-count {
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.citations {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  margin: 0;
+  padding: 0;
+}
+
+.citation {
+  background: var(--surface-raised);
+  border: 1px solid var(--stroke-default);
+  border-radius: var(--radius-action);
+}
+
+.citation-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  width: 100%;
+  min-height: var(--control-min-height);
+  padding: var(--space-8) var(--space-12);
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+
+.citation-toggle:hover {
+  background: var(--surface-panel);
+}
+
+.citation-label {
+  flex: none;
+  color: var(--state-active);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.citation-name {
+  overflow-wrap: anywhere;
+}
+
+.citation-chevron {
+  flex: none;
+  margin-left: auto;
+  color: var(--text-secondary);
+  transition: transform 0.15s ease;
+}
+
+.citation-toggle[aria-expanded='true'] .citation-chevron {
+  transform: rotate(180deg);
+}
+
+.citation-body {
+  padding: 0 var(--space-12) var(--space-12);
+  border-top: 1px solid var(--stroke-default);
+}
+
+.citation-section {
+  margin: var(--space-8) 0 0;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.citation-excerpt {
+  margin: var(--space-8) 0;
+  padding: var(--space-8) var(--space-10);
+  background: var(--surface-page);
+  border-left: 2px solid var(--state-active);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.retrieval-score {
+  margin: 0;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.retrieval-score strong {
+  color: var(--state-success);
+  font-weight: 600;
+}
+
+/* ---------- Responsive (§14, §16) ---------- */
+
+@media (min-width: 901px) {
+  .result-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+@media (max-width: 820px) {
+  .topbar {
+    padding: 0 var(--space-16);
+    gap: var(--space-12);
+  }
+
+  .content {
+    padding: 26px 16px;
+  }
+}
+
+@media (max-width: 560px) {
+  .answer-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-8);
+  }
+
+  .query-form .button,
+  .upload-form .button,
+  .result-actions .button,
+  .error-state .button {
+    width: 100%;
+  }
+
+  /* Document errors render below the row; empty error cells disappear. */
+  .documents-table,
+  .documents-table tbody,
+  .documents-table tr,
+  .documents-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .documents-table thead {
+    display: none;
+  }
+
+  .documents-table tr {
+    padding: var(--space-12) var(--space-16);
+    border-bottom: 1px solid var(--stroke-default);
+  }
+
+  .documents-table tbody tr:hover {
+    background: transparent;
+  }
+
+  .documents-table td {
+    padding: 0 0 var(--space-6);
+    border-bottom: none;
+  }
+
+  .documents-table td:empty {
+    display: none;
+  }
+
+  .cell-name {
+    max-width: none;
+  }
+}
+
+/* ---------- Reduced motion (§16) ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+
+  .citation-chevron {
+    transition: none;
+  }
 }
