@@ -52,7 +52,7 @@ describe('App — delete a document', () => {
 
     await waitFor(() => {
       const calls = fetchMock.mock.calls.map((c) => [String(c[0]), (c[1] as RequestInit | undefined)?.method]);
-      expect(calls).toContainEqual(['/api/documents/doc-1', expect.objectContaining({ method: 'DELETE' })]);
+      expect(calls).toContainEqual(['/api/documents/doc-1', 'DELETE']);
     });
 
     // The row disappears without a reload; a success notice is shown.
