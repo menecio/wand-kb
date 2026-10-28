@@ -31,7 +31,7 @@ class Settings(BaseSettings):
 
     # Retrieval configuration
     retrieval_top_k: int = 5
-    retrieval_threshold: float = 0.55
+    retrieval_threshold: float = 0.50
     max_context_tokens: int = 2048
 
     # Server configuration

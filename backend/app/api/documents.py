@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import logging
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
@@ -25,6 +26,8 @@ from app.services.qdrant import QdrantClient
 from app.services.registry import load_registry, save_registry
 
 router = APIRouter()
+
+logger = logging.getLogger(__name__)
 
 ALLOWED_EXTENSIONS = {".pdf", ".md", ".txt"}
 
@@ -120,6 +123,11 @@ def _process_uploaded_file(file_path: Path, document_id: str, filename: str, con
             collection_name=settings.qdrant_collection_name,
             points=points,
         )
+    logger.info(
+        "document processed: %s, %d chunks stored",
+        filename,
+        len(points),
+    )
 
 
 @router.get("/api/documents", response_model=DocumentList)
