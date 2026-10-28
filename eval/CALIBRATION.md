@@ -119,3 +119,25 @@ recorded as a known model-quality limitation.
   same facet*. Non-numeric conflicts, subtle paraphrases (e.g., "1 hour" vs
   "60 minutes"), and conflicts the model excludes from its citations remain
   model-dependent.
+
+## 2026-10-28 recalibration: threshold lowered 0.55 -> 0.50 (ADR 0020, issue #12)
+
+Live measurements against the running stack (nomic-embed-text + Qdrant cosine,
+7-point index: meeting_notes.pdf, company_policy.md, one CV document):
+
+- "how much was the approved budget?" vs meeting_notes.pdf: **0.5710** — only
+  0.02 above the previous 0.55 gate.
+- Answerable phrasings that fell below the old gate: "what is the approved
+  budget?" 0.5469, "approved budget" 0.5214, "how much was the approved budget"
+  (no question mark) 0.5522 (marginal), "what budget was approved?" 0.5798.
+- Irrelevant queries (case_04 band): 0.44–0.46 — remain below the new 0.50 gate.
+- Embeddings verified deterministic (a freshly computed embedding has cosine
+  1.0 with the stored vector; stable across Ollama model reloads), so the
+  reported gate failures were threshold calibration, not embedding flakiness.
+
+Decision: default `RETRIEVAL_THRESHOLD` = 0.50. The irrelevant band stays
+rejected deterministically; the 0.50–0.55 band now reaches generation, where
+the existing citation-required validation and the model's context-only prompt
+provide the second line of defense. Gated responses now disclose the best
+retrieved score vs the active threshold in `missing_info` so near-misses are
+visible to callers and in logs.
