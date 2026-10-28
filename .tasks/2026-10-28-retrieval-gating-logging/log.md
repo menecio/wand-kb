@@ -17,3 +17,7 @@
 ## [2026-10-28T10:08] orchestrator — user confirmed ("continue"); implementer delegated (phase 4, iteration 1)
 
 ## [2026-10-28T10:14] implementer — completed iteration 1: threshold 0.50, near-miss disclosure, root-logger INFO config, processing log, CALIBRATION.md append; unit suite 130 passed / 3 skipped, ruff+mypy clean; committed
+
+## [2026-10-28T10:40] pr-creator — PR #14 opened: https://github.com/menecio/wand-kb/pull/14 (fix/retrieval-gating-logging → main, closes #12)
+
+## [2026-10-28T10:41] orchestrator — pipeline closed (issue #12, PR #14, evidence .tasks/2026-10-28-retrieval-gating-logging/)
