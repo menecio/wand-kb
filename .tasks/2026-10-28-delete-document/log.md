@@ -27,3 +27,7 @@
 ## [2026-10-28T10:50] orchestrator — verify-1 verdicts: logic PASS (126 backend + 27 vitest, lint/typecheck clean, all criteria met); visual PASS (delete e2e + smoke e2e + live integration + screenshot evidence)
 
 ## [2026-10-28T10:51] orchestrator — all verdicts PASS → PR requested from feat/delete-document to main
+
+## [2026-10-28T10:56] orchestrator — PR #16 created (https://github.com/menecio/wand-kb/pull/16); temporary verification stack torn down (user's main stack untouched)
+
+## [2026-10-28T10:56] orchestrator — pipeline closed: issue #13, PR #16, evidence .tasks/2026-10-28-delete-document/ (1 verification round, no amendments)
