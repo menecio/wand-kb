@@ -4,7 +4,15 @@ import uuid
 from typing import Any
 
 from qdrant_client import QdrantClient as _QdrantClient
-from qdrant_client.http.models import Distance, PointStruct, VectorParams
+from qdrant_client.http.models import (
+    Distance,
+    FieldCondition,
+    Filter,
+    FilterSelector,
+    MatchValue,
+    PointStruct,
+    VectorParams,
+)
 
 
 class QdrantConnectionError(Exception):
@@ -142,3 +150,19 @@ class QdrantClient:
             }
             for result in points
         ]
+
+    def delete_document_points(self, collection_name: str, document_id: str) -> None:
+        """Delete every point of a document (payload field `document_id`)."""
+        selector = FilterSelector(
+            filter=Filter(
+                must=[
+                    FieldCondition(key="document_id", match=MatchValue(value=document_id)),
+                ]
+            )
+        )
+        try:
+            self._client.delete(collection_name=collection_name, points_selector=selector)
+        except Exception as exc:
+            raise QdrantConnectionError(
+                f"Failed to delete points of document {document_id} from {collection_name}: {exc}"
+            ) from exc

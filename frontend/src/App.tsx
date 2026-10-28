@@ -64,6 +64,17 @@ export default function App() {
     setStatus('ready');
   }
 
+  /**
+   * Remove a deleted document from the in-memory list. The backend has
+   * already confirmed the hard delete (file + registry + vector store), so
+   * no refetch is needed.
+   */
+  function handleDeleted(documentId: string) {
+    setDocuments((previous) =>
+      previous.filter((document) => document.document_id !== documentId),
+    );
+  }
+
   return (
     <div className="shell">
       <header className="topbar">
@@ -112,6 +123,7 @@ export default function App() {
             status={status}
             onRefresh={() => void load()}
             onUploaded={handleUploaded}
+            onDeleted={handleDeleted}
           />
         )}
       </main>

@@ -5,15 +5,17 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import logging
+import shutil
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated, Any
 
-from fastapi import APIRouter, File, UploadFile
+from fastapi import APIRouter, File, HTTPException, UploadFile
 
 from app.config import settings
 from app.schemas.document import (
+    DocumentDeleteResponse,
     DocumentList,
     DocumentStatus,
     DocumentSummary,
@@ -22,7 +24,7 @@ from app.schemas.document import (
 )
 from app.services.document_processing import chunk_text, extract_text
 from app.services.ollama import OllamaClient
-from app.services.qdrant import QdrantClient
+from app.services.qdrant import QdrantClient, QdrantConnectionError
 from app.services.registry import load_registry, save_registry
 
 router = APIRouter()
@@ -213,3 +215,32 @@ async def upload_documents(
 
     _persist_documents(documents)
     return DocumentUploadResult(results=results)
+
+
+@router.delete("/api/documents/{document_id}", response_model=DocumentDeleteResponse)
+def delete_document(document_id: str) -> DocumentDeleteResponse:
+    """Hard-delete a document from the filesystem, registry and vector store.
+
+    Qdrant is cleared first: if the vector store is unreachable the request
+    fails and the document stays intact everywhere (ADR-0020, no partial
+    state). Filesystem and registry cleanup follow only after that succeeded.
+    """
+    documents = _get_documents()
+    if document_id not in documents:
+        raise HTTPException(status_code=404, detail=f"Document {document_id} not found")
+
+    qdrant_client = QdrantClient(host=settings.qdrant_host, port=settings.qdrant_port)
+    try:
+        qdrant_client.delete_document_points(
+            settings.qdrant_collection_name, document_id
+        )
+    except QdrantConnectionError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    document_dir = _ensure_upload_dir() / document_id
+    if document_dir.exists():
+        shutil.rmtree(document_dir)
+
+    del documents[document_id]
+    _persist_documents(documents)
+    return DocumentDeleteResponse(document_id=document_id, deleted=True)
