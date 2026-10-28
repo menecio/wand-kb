@@ -108,7 +108,110 @@ This starts:
 - `ollama` on http://127.0.0.1:11434
 - `ollama-init` pulls `nomic-embed-text` and `qwen2.5:3b` once into a persistent volume
 
-API documentation is available at http://127.0.0.1:8000/docs.
+API documentation is available at http://127.0.0.1:8000/docs (Swagger) and http://127.0.0.1:8000/openapi.json (raw OpenAPI). The frontend is served from the same origin at http://127.0.0.1:8000/ — no separate frontend port is needed.
+
+## Trying the API
+
+All endpoints are available at `http://127.0.0.1:8000`. Interactive docs: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs).
+
+### Health check
+
+```bash
+curl http://127.0.0.1:8000/api/health
+# {"status":"ok"}
+```
+
+### List documents
+
+```bash
+curl http://127.0.0.1:8000/api/documents
+```
+
+### Upload documents
+
+```bash
+# Single file
+curl -X POST http://127.0.0.1:8000/api/documents \
+  -F "files=@eval/documents/SLA_Policy.md"
+
+# Multiple files
+curl -X POST http://127.0.0.1:8000/api/documents \
+  -F "files=@eval/documents/SLA_Policy.md" \
+  -F "files=@eval/documents/Employee_Handbook.pdf"
+```
+
+Response includes per-file statuses (`READY`, `PROCESSING`, `FAILED`, `DUPLICATE`, `REJECTED`) and a `document_id` for each accepted file. Duplicate content (same SHA-256) returns `DUPLICATE` without creating a new document.
+
+### Query (RAG answer)
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/query \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What is the response time for critical incidents?"}'
+```
+
+Response shape:
+
+```json
+{
+  "answer": "…",
+  "confidence": "HIGH | MEDIUM | LOW | INSUFFICIENT_DATA",
+  "is_complete": true,
+  "missing_info": [],
+  "citations": [...],
+  "facets": [...]
+}
+```
+
+If no chunk passes `RETRIEVAL_THRESHOLD` (0.55), the API returns `confidence: "INSUFFICIENT_DATA"` without calling the LLM.
+
+### Search (raw retrieval, no generation)
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/search \
+  -H "Content-Type: application/json" \
+  -d '{"query": "maintenance window", "top_k": 5}'
+```
+
+### Delete a document
+
+```bash
+curl -X DELETE http://127.0.0.1:8000/api/documents/{document_id}
+```
+
+## Using the Frontend
+
+The frontend is a single-page app with two views: **Documents** and **Ask & answers**. It is built into the backend image, so `docker compose up -d --build` is enough — then open [http://127.0.0.1:8000/](http://127.0.0.1:8000/).
+
+### 1. Upload documents
+
+Open **Documents** → **Choose files** → **Upload**. Supported types: PDF (text-based), Markdown, TXT.
+
+![Documents view — upload and document list](docs/screenshots/01-documents.png)
+
+After upload you will see a summary (e.g. “3 files ready”) and each row shows its SHA-256 prefix, age, and status badge (`READY`, `PROCESSING`, `FAILED`, `DUPLICATE`). Use the refresh button if a file is still processing.
+
+### 2. Ask a question
+
+Switch to **Ask & answers**. Type a question grounded in your documents and click **Run query**.
+
+![Ask & answers — question input](docs/screenshots/02-ask.png)
+
+If no documents are ready, the view shows a prompt to upload first.
+
+### 3. Read the answer
+
+The result shows:
+
+- **Confidence** and **Completeness** badges (`HIGH`/`MEDIUM`/`LOW`/`INSUFFICIENT_DATA`, `Complete`/`Incomplete`)
+- **Answer** text grounded in citations
+- **Gaps / Missing info** when `is_complete` is `false`
+- **Enrichment suggestions** — actionable next documents or data to upload
+- **Evidence** panel with document name, section, and excerpt for each citation
+
+![Answer result — confidence, gaps, and evidence](docs/screenshots/03-answer.png)
+
+Tip: start with a specific question (e.g. “What is the monthly maintenance window?”) rather than a meta question like “Are there any conflicts?” — the latter may gate out under dense retrieval (see Known Limitations).
 
 ## Retrieval and Thresholding
 
