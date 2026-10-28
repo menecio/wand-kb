@@ -36,8 +36,15 @@ if [ -n "$staged_ts" ]; then
       if [ -f "$frontend_dir/$c" ]; then eslint_cfg="$c"; break; fi
     done
     if [ -n "$eslint_cfg" ]; then
+      rel_files=""
+      for f in $staged_ts; do
+        case "$f" in
+          "$frontend_dir/"*) rel_files="$rel_files ${f#"$frontend_dir"/}" ;;
+          *) rel_files="$rel_files $f" ;;
+        esac
+      done
       echo "Running eslint..."
-      (cd "$frontend_dir" && npx eslint $staged_ts) || exit 1
+      (cd "$frontend_dir" && npx eslint $rel_files) || exit 1
     fi
   fi
 fi
