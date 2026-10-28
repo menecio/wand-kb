@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { uploadDocuments } from '../lib/api';
+import { Trash2 } from 'lucide-react';
+import { deleteDocument, uploadDocuments } from '../lib/api';
 import type { DocumentStatus, DocumentSummary, UploadResultItem } from '../types';
 import Button from './ui/Button';
 import Spinner from './Spinner';
@@ -7,9 +8,10 @@ import StatusBadge from './StatusBadge';
 
 interface DocumentsViewProps {
   documents: DocumentSummary[];
-  status: 'loading' | 'ready' | 'error';
+  status: 'loading' | 'error' | 'ready';
   onRefresh: () => void;
   onUploaded: (results: UploadResultItem[]) => void;
+  onDeleted: (documentId: string) => void;
 }
 
 /**
@@ -50,9 +52,26 @@ export default function DocumentsView({
   status,
   onRefresh,
   onUploaded,
+  onDeleted,
 }: DocumentsViewProps) {
   const [uploading, setUploading] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  async function handleDelete(document: DocumentSummary) {
+    setDeleteError(null);
+    setDeletingId(document.document_id);
+    try {
+      await deleteDocument(document.document_id);
+      onDeleted(document.document_id);
+      setNotice(`${document.document_name} deleted.`);
+    } catch {
+      setDeleteError(`Could not delete ${document.document_name}. Try again.`);
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   async function handleUpload(files: File[]) {
     if (files.length === 0) return;
@@ -103,6 +122,12 @@ export default function DocumentsView({
         </Button>
       </form>
 
+      {deleteError && (
+        <div role="alert" className="error-state panel">
+          <p>{deleteError}</p>
+        </div>
+      )}
+
       {notice && (
         <div role="status" className="notice">
           <p>{notice}</p>
@@ -137,6 +162,7 @@ export default function DocumentsView({
               <th>Document</th>
               <th>Status</th>
               <th>Error</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -147,6 +173,21 @@ export default function DocumentsView({
                   <StatusBadge status={document.status} />
                 </td>
                 <td className="cell-error">{document.error ?? ''}</td>
+                <td>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    aria-label={`Delete ${document.document_name}`}
+                    disabled={deletingId === document.document_id}
+                    onClick={() => void handleDelete(document)}
+                  >
+                    {deletingId === document.document_id ? (
+                      <Spinner />
+                    ) : (
+                      <Trash2 aria-hidden="true" />
+                    )}
+                  </Button>
+                </td>
               </tr>
             ))}
           </tbody>

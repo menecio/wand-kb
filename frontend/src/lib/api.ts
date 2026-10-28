@@ -1,4 +1,5 @@
 import type {
+  DocumentDeleteResult,
   DocumentList,
   DocumentUploadResult,
   QueryRequest,
@@ -18,6 +19,13 @@ async function parse(response: Response) {
 
 export async function listDocuments(): Promise<DocumentList> {
   const response = await fetch('/api/documents');
+  return parse(response);
+}
+
+export async function deleteDocument(documentId: string): Promise<DocumentDeleteResult> {
+  const response = await fetch(`/api/documents/${encodeURIComponent(documentId)}`, {
+    method: 'DELETE',
+  });
   return parse(response);
 }
 

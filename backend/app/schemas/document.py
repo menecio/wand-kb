@@ -31,6 +31,13 @@ class DocumentList(BaseModel):
     documents: list[DocumentSummary]
 
 
+class DocumentDeleteResponse(BaseModel):
+    """Result of deleting a single document."""
+
+    document_id: str
+    deleted: bool
+
+
 class UploadResultItem(BaseModel):
     """Per-file result of a document upload request."""
 

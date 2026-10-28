@@ -21,6 +21,11 @@ export interface DocumentList {
   documents: DocumentSummary[];
 }
 
+export interface DocumentDeleteResult {
+  document_id: string;
+  deleted: boolean;
+}
+
 export interface UploadResultItem {
   filename: string;
   status: DocumentStatus;
