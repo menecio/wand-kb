@@ -270,6 +270,10 @@ def _validate_and_assemble(
     context_chunks: list[dict],
 ) -> _GenerationResult:
     """Validate invariants and assemble citations from retrieved payloads."""
+    answer_text = str(raw.answer).strip()
+    if not answer_text:
+        raise ValueError("model returned a blank answer")
+
     context_by_id = {chunk["id"]: chunk for chunk in context_chunks}
 
     # Drop invented citations and facet citation ids not in context.
@@ -363,7 +367,7 @@ def _validate_and_assemble(
     response_id = raw.response_id if isinstance(raw.response_id, str) else str(uuid.uuid4())
     return _GenerationResult(
         response_id=response_id,
-        answer=str(raw.answer),
+        answer=answer_text,
         confidence=confidence,
         is_complete=is_complete,
         missing_info=missing_info,
