@@ -19,7 +19,7 @@ test('trash button deletes a document row from the documents list', async ({ pag
   test.setTimeout(120_000);
   await page.goto('/');
 
-  await page.getByRole('link', { name: 'Documents' }).click();
+  await page.getByRole('link', { name: 'Documents', exact: true }).click();
   await page.getByLabel('Upload documents').setInputFiles([doc]);
   await page.locator('form button[type="submit"]').click();
   const row = page.getByRole('button', { name: `Delete ${doc.name}` });
