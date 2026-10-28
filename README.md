@@ -96,8 +96,10 @@ All configuration is via environment variables (loaded by `backend/app/config.py
 ## Running the Application
 
 ```bash
-docker compose up -d
+docker compose up -d --build
 ```
+
+The `--build` flag builds the backend image, including the frontend bundle (see ADR 0019) — no host-side `npm` step is needed on a fresh clone.
 
 This starts:
 
