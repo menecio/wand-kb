@@ -8,7 +8,7 @@ import re
 import uuid
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from app.config import settings
 from app.schemas.facet import Facet, FacetStatus
@@ -230,6 +230,58 @@ class _ControlledAnswerError(Exception):
     """Raised when the model output cannot be validated after bounded retry."""
 
 
+# Confidence values the model uses to express "no confidence"; they map to the
+# semantically identical INSUFFICIENT_DATA instead of failing validation
+# (issue #15 / ADR 0021).
+_CONFIDENCE_ALIASES = {"NONE", "UNKNOWN", "UNSURE", ""}
+
+
+def _coerce_confidence(value: Any) -> Any:
+    """Case-fold confidence; map near-miss "no confidence" values to INSUFFICIENT_DATA."""
+    if not isinstance(value, str):
+        return value
+    normalized = value.strip().upper()
+    if normalized in _CONFIDENCE_ALIASES:
+        return ConfidenceLevel.INSUFFICIENT_DATA.value
+    return normalized
+
+
+def _coerce_facet_status(value: Any) -> Any:
+    """Case-fold facet status; unknown values coerce to UNCERTAIN (never ANSWERED)."""
+    if not isinstance(value, str):
+        return value
+    normalized = value.strip().upper()
+    if normalized in FacetStatus.__members__:
+        return normalized
+    return FacetStatus.UNCERTAIN.value
+
+
+def _coerce_action_type(value: Any) -> Any:
+    """Case-fold action type; unknown values coerce to the conservative ASK_USER."""
+    if not isinstance(value, str):
+        return value
+    normalized = value.strip().upper()
+    if normalized in ActionType.__members__:
+        return normalized
+    return ActionType.ASK_USER.value
+
+
+def _coerce_facet_payload(facet: dict[str, Any]) -> dict[str, Any]:
+    """Return a copy of a raw facet dict with its status coerced."""
+    coerced = dict(facet)
+    if "status" in coerced:
+        coerced["status"] = _coerce_facet_status(coerced["status"])
+    return coerced
+
+
+def _coerce_suggestion_payload(suggestion: dict[str, Any]) -> dict[str, Any]:
+    """Return a copy of a raw enrichment-suggestion dict with its action coerced."""
+    coerced = dict(suggestion)
+    if "action_type" in coerced:
+        coerced["action_type"] = _coerce_action_type(coerced["action_type"])
+    return coerced
+
+
 class _GenerationSchema(BaseModel):
     """Lenient schema for model output; backend fills response_id and citations."""
 
@@ -241,6 +293,34 @@ class _GenerationSchema(BaseModel):
     facets: list[Facet] = Field(default_factory=list)
     response_id: str | None = None
     citations: list[Citation] = Field(default_factory=list)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _coerce_model_enums(cls, data: Any) -> Any:
+        """Coerce near-miss enum values in untrusted model output (issue #15).
+
+        Applies only to this generation schema; the public response models keep
+        strict validation. Unknown non-alias confidence values are not coerced
+        and still fail validation (bounded retry / controlled error path).
+        """
+        if not isinstance(data, dict):
+            return data
+        coerced = dict(data)
+        if "confidence" in coerced:
+            coerced["confidence"] = _coerce_confidence(coerced["confidence"])
+        facets = coerced.get("facets")
+        if isinstance(facets, list):
+            coerced["facets"] = [
+                _coerce_facet_payload(facet) if isinstance(facet, dict) else facet
+                for facet in facets
+            ]
+        suggestions = coerced.get("enrichment_suggestions")
+        if isinstance(suggestions, list):
+            coerced["enrichment_suggestions"] = [
+                _coerce_suggestion_payload(s) if isinstance(s, dict) else s
+                for s in suggestions
+            ]
+        return coerced
 
 
 class _GenerationResult(QueryResponse):
