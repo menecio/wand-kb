@@ -46,7 +46,6 @@ All AI processing runs locally via Ollama. No external AI provider or API key is
 - Authentication and authorization
 - Cloud deployment
 - Answer quality rating
-- Frontend development (this phase)
 
 ## Project Structure
 
@@ -140,15 +139,18 @@ There is no `confidence_score`; confidence is qualitative only.
 ## Known Limitations
 
 - **Local model latency:** First generation call can be slow while the model loads into memory; subsequent calls are faster.
-- **Structured-output quality:** `qwen2.5:3b` sometimes returns malformed JSON or violates the facet/citation contract. The backend applies one bounded retry and returns a controlled `INSUFFICIENT_DATA` error if validation still fails.
+- **Structured-output quality:** `qwen2.5:3b` sometimes returns malformed JSON or violates the facet/citation contract. The backend applies one bounded retry and returns a controlled `INSUFFICIENT_DATA` error if validation still fails; blank answers are now rejected the same way (Phase 6 fix, verified against a prompt-injection probe).
 - **Dense retrieval only:** No hybrid search, reranking, or OCR. Queries that need keyword matching or image-based PDFs will fail.
 - **Single-process registry:** The JSON registry is suitable for a single-user prototype; concurrent writers are not supported.
 - **Embedding quality:** Small embedding shifts can cause answerable questions to gate out or irrelevant fragments to pass. Calibration is documented in `eval/CALIBRATION.md`.
-- **Evaluation case_08:** "Are there any conflicts in the documents?" gates out (`INSUFFICIENT_DATA`) because dense retrieval does not match this global/meta question strongly enough to pass the 0.55 threshold.
-- **Evaluation case_03:** "What are the company policies and what products do we sell?" retrieves borderline fragments but the model returns `is_complete=False` because product information is missing from the context.
-- **Evaluation case_11:** "What is the recovery time objective for Acme production systems?" still returns `is_complete=True` despite the presence of contradictory 1-hour and 4-hour documents, because the model cites only the 1-hour sources and the backend conflict detector inspects only cited excerpts.
-- **Post-fix deltas:** The most recent evaluation run also recorded incomplete classifications for case_01 (multiple vacation-policy versions in the KB), case_06 (model number missing from the spec sheet), and case_10 (budget approver not explicitly named). See `eval/CALIBRATION.md` and `eval/RESULTS.md` for full per-case observations.
+- **Global/meta questions gate out:** "Are there any conflicts in the documents?" (case_08) returns `INSUFFICIENT_DATA` because dense retrieval does not match this global/meta question strongly enough to pass the 0.55 threshold.
+- **Hallucination risk in synthesis (observed):** with `qwen2.5:3b`, a two-document synthesis probe once produced an unsupported clause ("backend work … handled by Alibaba Cloud") with valid-looking citations. Answers are always citation-backed, but individual claims are not semantically fact-checked against the cited excerpts; deterministic claim verification is out of scope.
+- **Facet over-acceptance:** the model may mark a facet `ANSWERED` without the answer actually naming the asked fact (observed in case_10: budget approver). Top-level `is_complete` stayed `False`, so the response invariant held.
+- **Over-conservative completeness:** fully supported single-fact answers are sometimes marked `is_complete=False` with a `PARTIAL` facet that carries no gap text (observed in case_07/09/13). Conservative, never incomplete→complete.
+- **Conflict-pair false positives:** the deterministic conflict detector (ADR 0016) extracts every number in cited excerpts, so an agreeing document can be reported as the conflicting side (case_11 reported "1 vs 2" from "two recovery objectives"). The genuine 1-vs-4 conflict is detected correctly when both sides are cited (case_12).
+- **Uncited contradicting evidence ignored:** when the model cites only one side of a known contradiction (case_14: 20 days cited, "ten days" retrieved but uncited), the conflict is not surfaced; the detector inspects only cited excerpts.
 - **Conflict-detection scope:** The deterministic backend conflict check (ADR 0016) handles the numeric-contradiction class for the same facet's cited excerpts (e.g., "1 hour" vs "4 hours"). Non-numeric conflicts, semantic equivalences (e.g., "1 hour" vs "60 minutes"), and conflicts excluded from the model's citations remain model-dependent.
+- **Event-loop blocking (known issue, fix pending user approval):** the query/search endpoints run blocking Ollama/Qdrant calls on the uvicorn event loop, so one slow query delays other requests at single-worker scale. Brief and plan: `.tasks/2026-10-28-async-blocking-calls/` (awaiting confirmation; not executed in Phase 6).
 
 ## Running Tests
 
@@ -171,13 +173,20 @@ uv run pytest -m integration --tb=short -q
 
 ## Evaluation
 
-After starting the stack:
+After starting the stack (run from `backend/` so `requests` is available):
 
 ```bash
-uv run python eval/run_eval.py
+cd backend
+uv run python ../eval/run_eval.py
 ```
 
 Results are written to `eval/RESULTS.md`.
+
+**Phase 6 evaluation results (2026-10-28, real Ollama + Qdrant):** all 14 cases
+executed. 9 matched expectations outright; the rest matched behaviorally with
+documented nuances. No irrelevant query was accepted as answered and no
+answerable question was systematically rejected, so the 0.55 retrieval
+threshold was left unchanged. Evidence: `.tasks/2026-10-28-phase6-evaluation/reports/`.
 
 ## License
 
