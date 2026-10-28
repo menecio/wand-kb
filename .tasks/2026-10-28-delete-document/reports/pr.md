@@ -8,5 +8,5 @@
 - Branch: feat/delete-document → Base: main
 - Body links issue #13 (`Closes #13`), lists all acceptance criteria as met,
   test results (pytest 126 + integration 1, vitest 27, Playwright e2e),
-  ADR-0020/0021 references, evidence path `.tasks/2026-10-28-delete-document/`,
+  ADR-0022/0021 references, evidence path `.tasks/2026-10-28-delete-document/`,
   and the pre-existing follow-up notes (test isolation, e2e locator).

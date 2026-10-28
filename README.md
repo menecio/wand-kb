@@ -179,6 +179,13 @@ curl -X POST http://127.0.0.1:8000/api/search \
 curl -X DELETE http://127.0.0.1:8000/api/documents/{document_id}
 ```
 
+This is a hard delete (ADR-0022): the uploaded file is removed from
+`data/uploads/`, the registry entry is removed, and all of the document's
+chunks/embeddings are deleted from Qdrant, so it no longer contributes to
+answers. Unknown ids return 404; if the vector store is unreachable the
+delete fails (503) and the document stays intact. Works for documents in any
+status. There is no undo.
+
 ## Using the Frontend
 
 The frontend is a single-page app with two views: **Documents** and **Ask & answers**. It is built into the backend image, so `docker compose up -d --build` is enough — then open [http://127.0.0.1:8000/](http://127.0.0.1:8000/).
@@ -190,6 +197,8 @@ Open **Documents** → **Choose files** → **Upload**. Supported types: PDF (te
 ![Documents view — upload and document list](docs/screenshots/01-documents.png)
 
 After upload you will see a summary (e.g. “3 files ready”) and each row shows its SHA-256 prefix, age, and status badge (`READY`, `PROCESSING`, `FAILED`, `DUPLICATE`). Use the refresh button if a file is still processing.
+
+Each row also has a trash-bin button in the **Actions** column that deletes that document immediately (no confirmation — the delete is permanent). If the delete fails, an error notice appears and the row stays so you can retry.
 
 ### 2. Ask a question
 

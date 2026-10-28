@@ -119,7 +119,7 @@ Out:
 
 - Hard delete across all stores (filesystem + registry + Qdrant), no
   tombstones/undo — vs alternatives (soft-delete status flag, admin-only
-  purge). To be drafted as ADR-0020 (Status: Proposed) via adr-writer if the
+  purge). To be drafted as ADR-0022 (Status: Proposed) via adr-writer if the
   user confirms the approach.
 
 ### Worktree
@@ -144,7 +144,7 @@ User answers to §Open questions:
 4. If Qdrant is unreachable during delete: FAIL the whole delete, keep the
    document (no partial deletion, no orphaned chunks).
 5. Deletion strategy: HARD delete across all stores — no soft-delete status,
-   no tombstones, no undo. To be recorded as ADR-0020 (Status: Proposed;
+   no tombstones, no undo. To be recorded as ADR-0022 (Status: Proposed;
    user confirms approach, human flips Status to Accepted).
 
 These answers amend/refine the acceptance criteria as follows (superseding the

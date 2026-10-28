@@ -1,4 +1,4 @@
-# 0021. Orchestrator executes subagent roles in-session (harness limitation)
+# 0023. Orchestrator executes subagent roles in-session (harness limitation)
 
 - Status: Proposed
 - Date: 2026-10-28
