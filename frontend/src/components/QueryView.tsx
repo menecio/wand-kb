@@ -2,12 +2,16 @@ import { useState } from 'react';
 import { query as runQuery } from '../lib/api';
 import type { QueryResponse } from '../types';
 import AnswerResult from './AnswerResult';
+import Button from './ui/Button';
+import Textarea from './ui/Textarea';
+import Spinner from './Spinner';
 
 interface QueryViewProps {
   hasReady: boolean;
+  onNavigateToDocuments: () => void;
 }
 
-export default function QueryView({ hasReady }: QueryViewProps) {
+export default function QueryView({ hasReady, onNavigateToDocuments }: QueryViewProps) {
   const [question, setQuestion] = useState('');
   const [pending, setPending] = useState(false);
   const [result, setResult] = useState<QueryResponse | null>(null);
@@ -18,6 +22,15 @@ export default function QueryView({ hasReady }: QueryViewProps) {
       <section>
         <h1>Ask &amp; answers</h1>
         <p>Upload a document and wait until it is ready before asking a question.</p>
+        <a
+          href="#documents"
+          onClick={(event) => {
+            event.preventDefault();
+            onNavigateToDocuments();
+          }}
+        >
+          Go to Documents
+        </a>
       </section>
     );
   }
@@ -39,50 +52,67 @@ export default function QueryView({ hasReady }: QueryViewProps) {
     }
   }
 
+  function resetForNewQuery() {
+    setQuestion('');
+    setResult(null);
+    setError(false);
+  }
+
   return (
     <section>
       <h1>Ask &amp; answers</h1>
 
       <form
+        className="panel query-form"
         onSubmit={(event) => {
           event.preventDefault();
           void handleSubmit();
         }}
       >
         <label htmlFor="question">Question</label>
-        <textarea
+        <Textarea
           id="question"
           value={question}
+          placeholder="Ask a question about your documents"
+          disabled={pending}
           onChange={(event) => setQuestion(event.target.value)}
         />
-        <button type="submit" disabled={!question.trim() || pending}>
-          {pending ? 'Running…' : 'Run query'}
-        </button>
+        <Button type="submit" disabled={!question.trim() || pending}>
+          {pending ? (
+            <>
+              <Spinner /> Running…
+            </>
+          ) : (
+            'Run query'
+          )}
+        </Button>
       </form>
 
       {pending && (
-        <p role="status">Searching and generating your answer.</p>
+        <p role="status" className="state">
+          <Spinner /> Searching and generating your answer.
+        </p>
       )}
 
       {error && (
-        <div role="alert">
+        <div role="alert" className="error-state panel">
           <p>The request could not be completed. Try again.</p>
-          <button type="button" onClick={() => void handleSubmit()}>
+          <Button variant="outline" onClick={() => void handleSubmit()}>
             Retry
-          </button>
-          <button type="button" onClick={() => { setQuestion(''); setResult(null); setError(false); }}>
+          </Button>
+          <Button variant="ghost" onClick={resetForNewQuery}>
             New query
-          </button>
+          </Button>
         </div>
       )}
 
       {result && (
-        <>
+        <div className="result-actions">
           <AnswerResult result={result} />
-          <button type="button" onClick={() => { setQuestion(''); setResult(null); setError(false); }}>
+          <Button variant="ghost" onClick={resetForNewQuery}>
             New query
-          </button>
-        </>
+          </Button>
+        </div>
       )}
     </section>
   );
