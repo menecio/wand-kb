@@ -32,7 +32,7 @@ describe('App — shell and documents', () => {
 
     expect(screen.getByRole('navigation')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /ask & answers/i })).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('link', { name: /documents/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /^Documents$/ })).toBeInTheDocument();
   });
 
   it('fetches the document list on mount and does not auto-query', async () => {
@@ -54,7 +54,7 @@ describe('App — shell and documents', () => {
 
     render(<App />);
     const user = userEvent.setup();
-    await user.click(screen.getByRole('link', { name: /documents/i }));
+    await user.click(screen.getByRole('link', { name: /^Documents$/ }));
 
     expect(await screen.findByText('a.md')).toBeInTheDocument();
     expect(screen.getByText('Ready')).toBeInTheDocument();
@@ -68,7 +68,7 @@ describe('App — shell and documents', () => {
     render(<App />);
 
     const user = userEvent.setup();
-    await user.click(screen.getByRole('link', { name: /documents/i }));
+    await user.click(screen.getByRole('link', { name: /^Documents$/ }));
 
     expect(await screen.findByText(/no sources/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /upload documents/i })).toBeInTheDocument();
@@ -79,7 +79,7 @@ describe('App — shell and documents', () => {
     render(<App />);
 
     const user = userEvent.setup();
-    await user.click(screen.getByRole('link', { name: /documents/i }));
+    await user.click(screen.getByRole('link', { name: /^Documents$/ }));
 
     expect(await screen.findByText(/could not load/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument();
@@ -98,7 +98,7 @@ describe('App — shell and documents', () => {
 
     render(<App />);
     const user = userEvent.setup();
-    await user.click(screen.getByRole('link', { name: /documents/i }));
+    await user.click(screen.getByRole('link', { name: /^Documents$/ }));
 
     const input = screen.getByLabelText(/upload documents/i) as HTMLInputElement;
     const good = new File(['# ok'], 'good.md', { type: 'text/markdown' });
@@ -118,7 +118,7 @@ describe('App — shell and documents', () => {
 
     render(<App />);
     const user = userEvent.setup();
-    await user.click(screen.getByRole('link', { name: /documents/i }));
+    await user.click(screen.getByRole('link', { name: /^Documents$/ }));
 
     expect(await screen.findByText('Duplicate')).toBeInTheDocument();
   });
@@ -178,10 +178,18 @@ describe('App — query, answer, and evidence', () => {
     expect(screen.getByText('Complete')).toBeInTheDocument();
     expect(screen.getByText('HIGH')).toBeInTheDocument();
 
+    // AC-8: the first citation is open by default; the toggle still works.
     const citationButton = screen.getByRole('button', { name: /policy/i });
-    await user.click(citationButton);
+    expect(citationButton).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByText('Employees must provide two weeks notice.')).toBeInTheDocument();
     expect(screen.getByText('0.92')).toBeInTheDocument();
+
+    await user.click(citationButton);
+    expect(citationButton).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByText('Employees must provide two weeks notice.')).not.toBeInTheDocument();
+
+    await user.click(citationButton);
+    expect(screen.getByText('Employees must provide two weeks notice.')).toBeInTheDocument();
   });
 
   it('renders a partial answer with missing info and suggestions before evidence', async () => {

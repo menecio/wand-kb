@@ -117,3 +117,24 @@ UI flag: yes. Playwright config already exists.
 - Mocking only in vitest/jsdom and Playwright network stubs, never in the running app.
 - Preserve append-only `.tasks/` evidence: log decisions, screenshots (desktop +
   390px after production build), and any ADR references.
+
+## Amendment 1 — 2026-10-28: pre-existing test selectors vs mandated behaviors
+
+Implementer reported that three brief-mandated behaviors collide with loose
+matchers in the pre-existing vitest suite (`App.test.tsx`) and with one of the
+new audit tests. The behaviors are required by this brief and remain
+unchanged; the affected tests' selectors are adjusted instead:
+
+1. **AC-4** adds a "Go to Documents" link in the empty-index state. Tests using
+   `getByRole('link', { name: /documents/i })` now match two links and are
+   narrowed to `/^Documents$/` (topbar nav).
+2. **AC-8** makes the first citation open by default. The "openable citation"
+   test now asserts open-by-default content, then verifies the toggle closes
+   and reopens the citation (still exercising keyboard activation).
+3. **J1 (§10)** mandates the submit button changes to "Running" while pending,
+   so the pending-state assertion targets `/running/i` instead of `/run query/i`.
+4. The new AC-5 test's fetch mock resolved with a raw body instead of the
+   `jsonResponse` wrapper; the mock is corrected (test bug, not a behavior
+   change).
+
+No acceptance criteria change. Reference: ADR 0017 remains the only new ADR.

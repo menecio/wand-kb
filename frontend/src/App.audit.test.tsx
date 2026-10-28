@@ -28,7 +28,7 @@ describe('App audit remediation — documents states', () => {
   // AC-5: generic wait while the initial GET is pending; the definitive
   // empty message appears only after a successful empty GET response.
   it('shows a generic wait (not the empty state) while the document list is loading', async () => {
-    let resolveList: ((body: { documents: DocumentSummaryFixture[] }) => void) | undefined;
+    let resolveList: ((response: Response) => void) | undefined;
     fetchMock.mockImplementationOnce(
       () =>
         new Promise((resolve) => {
@@ -43,7 +43,7 @@ describe('App audit remediation — documents states', () => {
     expect(screen.queryByText(/no sources/i)).not.toBeInTheDocument();
 
     await act(async () => {
-      resolveList?.({ documents: [] });
+      resolveList?.(jsonResponse({ documents: [] }));
     });
 
     expect(await screen.findByText(/no sources/i)).toBeInTheDocument();
@@ -179,7 +179,7 @@ describe('App audit remediation — query, answer, and evidence', () => {
   // AC-10: pending query shows text + spinner, blocks editing and resubmission.
   it('blocks question editing and shows text plus spinner while the query is pending', async () => {
     mockDocuments(fetchMock, [makeDocument()]);
-    let resolveQuery: ((body: QueryResponseFixture) => void) | undefined;
+    let resolveQuery: ((response: Response) => void) | undefined;
     fetchMock.mockImplementationOnce(
       () =>
         new Promise((resolve) => {
@@ -194,14 +194,14 @@ describe('App audit remediation — query, answer, and evidence', () => {
 
     const textarea = screen.getByLabelText(/question/i) as HTMLTextAreaElement;
     expect(textarea).toBeDisabled();
-    expect(screen.getByRole('button', { name: /run query/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /running/i })).toBeDisabled();
 
     const wait = screen.getByText(/searching and generating your answer/i);
     expect(wait).toBeInTheDocument();
     expect(wait.closest('[role="status"]')?.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
 
     await act(async () => {
-      resolveQuery?.(makeQueryResponse());
+      resolveQuery?.(jsonResponse(makeQueryResponse()));
     });
 
     expect(await screen.findByText('The handbook requires two weeks notice.')).toBeInTheDocument();
